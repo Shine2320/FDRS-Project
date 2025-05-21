@@ -1,29 +1,29 @@
 # accounts/serializers.py
 
 from rest_framework import serializers
-from .models import User, Donor
+from .models import User,Driver
 
 
-class DonorSerializer(serializers.ModelSerializer):
+class DriverSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Donor
-        fields = ["name", "contact_number", "address"]
+        model = Driver
+        fields = ["name", "contact_number", "vehicle"]
 
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    donor = DonorSerializer(required=False)
+    driver = DriverSerializer(required=False)
 
     class Meta:
         model = User
-        fields = ["email", "password", "role", "donor"]
+        fields = ["email", "password", "role", "driver"]
 
     def create(self, validated_data):
-        donor_data = validated_data.pop("donor", None)
+        driver_data = validated_data.pop("driver", None)
         password = validated_data.pop("password")
         user = User(**validated_data)
         user.set_password(password)
         user.save()
-        Donor.objects.create(login_id=user, **donor_data)
+        Driver.objects.create(login_id=user, **driver_data)
 
         return user
