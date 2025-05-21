@@ -1,4 +1,6 @@
+import { jwtDecode } from "jwt-decode";
 import { axiosInstance } from "../api/apiConfig";
+import { useAuthStore } from "../Store";
 import useAuth from "./useAuth";
 
 interface RefreshResponse {
@@ -8,6 +10,7 @@ interface RefreshResponse {
 export default function useRefreshToken() {
   const { isLoggedIn, setAccessToken, setIsLoggedIn, setRefreshToken } =
     useAuth();
+  const setCurrentUserRole = useAuthStore((state) => state.setCurrentUserRole);
 
   const refresh = async (): Promise<RefreshResponse | void> => {
     if (!isLoggedIn) {
@@ -19,11 +22,13 @@ export default function useRefreshToken() {
     }
     setRefreshToken(refresh_token);
     const response = await axiosInstance.post("auth/token/refresh/", {
-      refresh_token,
+      refresh: refresh_token,
     });
     if (response.data.access) {
       const accessToken: string = response.data.access;
       setAccessToken(accessToken);
+      const decoded: any = jwtDecode(response.data.access);
+      setCurrentUserRole(decoded.role);
 
       return { accessToken };
     } else {

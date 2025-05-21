@@ -4,14 +4,12 @@ import "./index.css";
 import App from "./App.tsx";
 import { BrowserRouter } from "react-router-dom";
 import { AuthContextProvider } from "./context/AuthContext.tsx";
-import "antd/dist/reset.css"; // AntD v5+ base style
+import "@ant-design/v5-patch-for-react-19";
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <AuthContextProvider>
-        <App />
-      </AuthContextProvider>
-    </BrowserRouter>
-  </StrictMode>
+  <BrowserRouter>
+    <AuthContextProvider>
+      <App />
+    </AuthContextProvider>
+  </BrowserRouter>
 );

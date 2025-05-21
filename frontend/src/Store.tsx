@@ -1,11 +1,13 @@
 import { create } from "zustand";
+import { Role } from "./constants/roles";
 
 interface AuthDetails {
-  token: string;
-  setToken: (token: string) => void;
+  currentUserRole: Role;
+  setCurrentUserRole: (role: Role) => void;
 }
 
 export const useAuthStore = create<AuthDetails>()((set) => ({
-  token: "",
-  setToken: (token: string) => set(() => ({ token })),
+  currentUserRole: Role.None,
+  setCurrentUserRole: (role) =>
+    set((state) => ({ ...state, currentUserRole: role })),
 }));

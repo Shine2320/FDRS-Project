@@ -21,7 +21,13 @@ import {
 } from "@ant-design/icons";
 import { axiosInstance } from "../../api/apiConfig";
 import { useNavigate } from "react-router-dom";
-import type { DonorFields, DriverFields, NgoFields, RegisterFormValues, StaffFields } from "../../types/register";
+import type {
+  DonorFields,
+  DriverFields,
+  NgoFields,
+  RegisterFormValues,
+  StaffFields,
+} from "../../types/register";
 import { Role } from "../../constants/roles";
 
 const { Title } = Typography;
@@ -57,26 +63,39 @@ const Register = () => {
           baseUrl = "ngo";
           break;
         case Role.Staff:
-           payload.ngo = {
+          payload.staff = {
             name: (values as StaffFields).full_name,
             contact_number: "+91" + values.contact_number,
           };
           baseUrl = "staff";
           break;
         case Role.Driver:
-           payload.ngo = {
+          payload.driver = {
             name: (values as DriverFields).full_name,
             contact_number: "+91" + values.contact_number,
-            vehicle:(values as DriverFields).vehicle_info
+            vehicle: (values as DriverFields).vehicle_info,
           };
           baseUrl = "driver";
           break;
         default:
           break;
       }
-      await axiosInstance.post(baseUrl + "/register/", payload);
-      message.success("Registration successful");
-      navigate("/auth/login");
+      await axiosInstance
+        .post(baseUrl + "/register/", payload)
+        .then(() => {
+          message.success("Registration successful");
+          navigate("/auth/login");
+        })
+        .catch((error: any) => {
+          if (error.response && error.response.data) {
+            // Loop through error response and display messages
+            Object.entries(error.response.data).forEach(([field, errorMsg]) => {
+              message.error(`${field}: ${errorMsg}`);
+            });
+          } else {
+            message.error("Something went wrong. Please try again.");
+          }
+        });
     } catch (err) {
       message.error("Registration failed");
       console.error(err);
@@ -195,7 +214,7 @@ const Register = () => {
   const DriverForm = (
     <Form layout="vertical" onFinish={(v) => handleSubmit(v, Role.Driver)}>
       {commonFields}
-       <Form.Item
+      <Form.Item
         name="full_name"
         label="Full Name"
         rules={[{ required: true, message: "Please enter your Full Name" }]}

@@ -2,12 +2,35 @@ import { NavLink } from "react-router-dom";
 import { Layout, Menu } from "antd";
 import useAuth from "../hooks/useAuth";
 import useLogout from "../hooks/useLogout";
+import { useCallback } from "react";
+import { useAuthStore } from "../Store";
+import { Role } from "../constants/roles";
 
 const { Header } = Layout;
 
 export default function Navbar() {
   const { isLoggedIn } = useAuth();
+  const role = useAuthStore((state) => state.currentUserRole);
   const logout = useLogout();
+
+  const renderNavItems = useCallback(() => {
+    if (role === Role.Admin) {
+      return (
+        <>
+          <Menu.Item key="admin-home">
+            <NavLink to="/admin/Home">Admin</NavLink>
+          </Menu.Item>
+          <Menu.Item key="staff-list">
+            <NavLink to="/admin/StaffList">Manage Staff</NavLink>
+          </Menu.Item>
+        </>
+      );
+    }
+
+    // Add other roles if needed here
+
+    return null;
+  }, [role]);
 
   return (
     <Layout>
@@ -24,10 +47,8 @@ export default function Navbar() {
 
           {isLoggedIn ? (
             <>
-              <Menu.Item key="user">
-                <NavLink to="/auth/user">User</NavLink>
-              </Menu.Item>
-              <Menu.Item key="register">
+              {renderNavItems()}
+              <Menu.Item key="logout">
                 <NavLink to="/auth/logout" onClick={logout}>
                   Logout
                 </NavLink>

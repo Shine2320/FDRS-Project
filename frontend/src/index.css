@@ -6,3 +6,6 @@ body {
   height: 100%;
   width: 100%;
 }
+.ant-message {
+  z-index: 9999 !important;
+}

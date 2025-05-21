@@ -4,11 +4,14 @@ import { axiosInstance } from "../../api/apiConfig";
 import useAuth from "../../hooks/useAuth";
 import { Form, Input, Button, Typography, Row, Col, Space, Card } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import { jwtDecode } from "jwt-decode";
+import { useAuthStore } from "../../Store";
 
 const { Title, Text, Link } = Typography;
 
 export default function Login() {
   const { setAccessToken, setIsLoggedIn } = useAuth();
+  const setCurrentUserRole = useAuthStore((state) => state.setCurrentUserRole);
   const navigate = useNavigate();
   const location = useLocation();
   const fromLocation =
@@ -28,6 +31,10 @@ export default function Login() {
           },
         }
       );
+      if (response?.data?.access) {
+        const decoded: any = jwtDecode(response.data.access);
+        setCurrentUserRole(decoded.role);
+      }
       localStorage.clear();
       localStorage.setItem("refresh_token", response?.data?.refresh);
       setAccessToken(response?.data?.access_token);

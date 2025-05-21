@@ -28,8 +28,7 @@ export default function useAxiosPrivate() {
           !prevRequest?.sent
         ) {
           prevRequest.sent = true;
-          const { accessToken: newAccessToken } =
-            (await refresh()) ?? {};
+          const { accessToken: newAccessToken } = (await refresh()) ?? {};
           setAccessToken(newAccessToken);
           prevRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
           return axiosPrivateInstance(prevRequest);

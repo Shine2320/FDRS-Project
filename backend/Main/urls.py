@@ -6,8 +6,8 @@ import Donors.urls
 import Drivers.urls
 import NGO.urls
 import Staff.urls
-from .views import HomeView, LogoutView
-import Donors,NGO,Staff,Drivers
+from .views import HomeView, LogoutView, CustomTokenObtainPairView,CustomTokenRefreshView
+import Donors, NGO, Staff, Drivers
 
 
 urlpatterns = [
@@ -17,12 +17,10 @@ urlpatterns = [
     path("ngo/", include(NGO.urls)),
     path("staff/", include(Staff.urls)),
     path("logout/", LogoutView.as_view()),
-    path(
-        "auth/token/", jwt_views.TokenObtainPairView.as_view(), name="token_obtain_pair"
-    ),
+    path("auth/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path(
         "auth/token/refresh/",
-        jwt_views.TokenRefreshView.as_view(),
+        CustomTokenRefreshView.as_view(),
         name="token_refresh",
     ),
 ]

@@ -6,6 +6,7 @@ import useUser from "../../hooks/useUser";
 
 export default function User() {
   const { user } = useAuth();
+  
 
   const navigate = useNavigate();
   const logout = useLogout();
