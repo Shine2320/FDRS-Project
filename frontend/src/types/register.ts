@@ -26,6 +26,7 @@ export interface StaffFields extends CommonFields {
 export interface DriverFields extends CommonFields {
   role: Role.Driver;
   vehicle_info: string;
+  full_name: string;
 }
 
 // 4) Union of all possible payloads

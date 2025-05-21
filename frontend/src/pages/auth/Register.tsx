@@ -21,7 +21,7 @@ import {
 } from "@ant-design/icons";
 import { axiosInstance } from "../../api/apiConfig";
 import { useNavigate } from "react-router-dom";
-import type { DonorFields, RegisterFormValues } from "../../types/register";
+import type { DonorFields, DriverFields, NgoFields, RegisterFormValues, StaffFields } from "../../types/register";
 import { Role } from "../../constants/roles";
 
 const { Title } = Typography;
@@ -49,10 +49,27 @@ const Register = () => {
           baseUrl = "donor";
           break;
         case Role.Ngo:
+          payload.ngo = {
+            organization_name: (values as NgoFields).organization_name,
+            contact_number: "+91" + values.contact_number,
+            address: (values as NgoFields).address,
+          };
+          baseUrl = "ngo";
           break;
         case Role.Staff:
+           payload.ngo = {
+            name: (values as StaffFields).full_name,
+            contact_number: "+91" + values.contact_number,
+          };
+          baseUrl = "staff";
           break;
         case Role.Driver:
+           payload.ngo = {
+            name: (values as DriverFields).full_name,
+            contact_number: "+91" + values.contact_number,
+            vehicle:(values as DriverFields).vehicle_info
+          };
+          baseUrl = "driver";
           break;
         default:
           break;
@@ -178,6 +195,13 @@ const Register = () => {
   const DriverForm = (
     <Form layout="vertical" onFinish={(v) => handleSubmit(v, Role.Driver)}>
       {commonFields}
+       <Form.Item
+        name="full_name"
+        label="Full Name"
+        rules={[{ required: true, message: "Please enter your Full Name" }]}
+      >
+        <Input prefix={<UserOutlined />} />
+      </Form.Item>
       <Form.Item
         name="vehicle_info"
         label="Vehicle Code"
