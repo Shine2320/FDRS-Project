@@ -1,71 +1,119 @@
 import { NavLink } from "react-router-dom";
-import { Layout, Menu } from "antd";
+import { Layout, Menu, Switch, Typography } from "antd";
+import {
+  BulbOutlined,
+  BulbFilled,
+  LogoutOutlined,
+  MoonFilled,
+  SunFilled,
+} from "@ant-design/icons";
 import useAuth from "../hooks/useAuth";
 import useLogout from "../hooks/useLogout";
-import { useCallback } from "react";
-import { useAuthStore } from "../Store";
+import { useCallback, useState } from "react";
+import { useAuthStore, useUITheme } from "../Store";
 import { Role } from "../constants/roles";
 
 const { Header } = Layout;
+const { Text } = Typography;
 
 export default function Navbar() {
   const { isLoggedIn } = useAuth();
-  const role = useAuthStore((state) => state.currentUserRole);
+  const role = useAuthStore((s) => s.currentUserRole);
   const logout = useLogout();
+  // Zustand store for theme state
+  const darkMode = useUITheme((s) => s.darkMode);
+  const setDarkMode = useUITheme((s) => s.setDarkMode);
 
   const renderNavItems = useCallback(() => {
     if (role === Role.Admin) {
-      return (
-        <>
-          <Menu.Item key="admin-home">
-            <NavLink to="/admin/Home">Admin</NavLink>
-          </Menu.Item>
-          <Menu.Item key="staff-list">
-            <NavLink to="/admin/StaffList">Manage Staff</NavLink>
-          </Menu.Item>
-        </>
-      );
+      return [
+        {
+          key: "staff-list",
+          label: <NavLink to="/admin/StaffList">Staff</NavLink>,
+        },
+        {
+          key: "driver-list",
+          label: <NavLink to="/admin/DriverList">Drivers</NavLink>,
+        },
+        {
+          key: "donor-list",
+          label: <NavLink to="/admin/DonorList">Donors</NavLink>,
+        },
+        { key: "ngo-list", label: <NavLink to="/admin/NGOList">NGOs</NavLink> },
+      ];
     }
-
-    // Add other roles if needed here
-
-    return null;
+    return [];
   }, [role]);
 
-  return (
-    <Layout>
-      <Header style={{ position: "sticky", top: 0, zIndex: 1000 }}>
-        <Menu
-          theme="dark"
-          mode="horizontal"
-          selectable={false}
-          style={{ display: "flex", justifyContent: "start" }}
-        >
-          <Menu.Item key="home">
-            <NavLink to="/">Home</NavLink>
-          </Menu.Item>
+  const commonItems = renderNavItems();
+  const authItems = isLoggedIn
+    ? [
+        {
+          key: "logout",
+          label: (
+            <Text onClick={logout} style={{ cursor: "pointer" }}>
+              <LogoutOutlined /> Logout
+            </Text>
+          ),
+        },
+      ]
+    : [
+        { key: "login", label: <NavLink to="/auth/login">Login</NavLink> },
+        {
+          key: "register",
+          label: <NavLink to="/auth/register">Register</NavLink>,
+        },
+      ];
 
-          {isLoggedIn ? (
-            <>
-              {renderNavItems()}
-              <Menu.Item key="logout">
-                <NavLink to="/auth/logout" onClick={logout}>
-                  Logout
-                </NavLink>
-              </Menu.Item>
-            </>
-          ) : (
-            <>
-              <Menu.Item key="login">
-                <NavLink to="/auth/login">Login</NavLink>
-              </Menu.Item>
-              <Menu.Item key="register">
-                <NavLink to="/auth/register">Register</NavLink>
-              </Menu.Item>
-            </>
-          )}
-        </Menu>
-      </Header>
-    </Layout>
+  return (
+    <Header
+      style={{
+        display: "flex",
+        alignItems: "center",
+        padding: "0 24px",
+        transition: "background 0.3s",
+        background: darkMode ? "#1f1f1f" : "#fff",
+      }}
+    >
+      {/* LEFT: logout or empty spacer */}
+      <div style={{ flex: "0 0 auto", marginRight: 24 }}>
+        {isLoggedIn && authItems.find((i) => i.key === "logout")?.label}
+      </div>
+
+      {/* CENTER: main nav */}
+      <Menu
+        mode="horizontal"
+        selectable={false}
+        style={{
+          flex: "1 1 auto",
+          justifyContent: "center",
+          background: "transparent",
+          borderBottom: "none",
+        }}
+        items={[
+          { key: "home", label: <NavLink to="/">Home</NavLink> },
+          ...commonItems,
+        ]}
+      />
+
+      {/* RIGHT: login/register OR empty, then theme toggle */}
+      <div
+        style={{
+          flex: "0 0 auto",
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+        }}
+      >
+        {!isLoggedIn &&
+          authItems.map((i) => <span key={i.key}>{i.label}</span>)}
+        <Switch
+          checked={darkMode}
+          onChange={(chk) => setDarkMode(chk)}
+          checkedChildren={<MoonFilled />}
+          unCheckedChildren={<SunFilled />}
+        />
+      </div>
+    </Header>
   );
 }

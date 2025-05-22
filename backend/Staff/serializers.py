@@ -7,7 +7,7 @@ from .models import User, Staff
 class StaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = Staff
-        fields = ["name", "contact_number"]
+        fields = ["name", "contact_number","address"]
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -35,7 +35,7 @@ class StaffUserSerializer(serializers.ModelSerializer):
         source="staff.contact_number", read_only=True
     )
     staff_id = serializers.CharField(source="staff.staff_id", read_only=True)
-
+    address = serializers.CharField(source="staff.address", read_only=True)
     class Meta:
         model = User
         fields = [
@@ -46,4 +46,5 @@ class StaffUserSerializer(serializers.ModelSerializer):
             "contact_number",
             "is_active",
             "id",
+            "address"
         ]

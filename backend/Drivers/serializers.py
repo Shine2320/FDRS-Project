@@ -7,7 +7,7 @@ from .models import User,Driver
 class DriverSerializer(serializers.ModelSerializer):
     class Meta:
         model = Driver
-        fields = ["name", "contact_number", "vehicle"]
+        fields = ["name", "contact_number", "vehicle","address"]
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -27,3 +27,25 @@ class RegisterSerializer(serializers.ModelSerializer):
         Driver.objects.create(login_id=user, **driver_data)
 
         return user
+
+class DriverUserSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="driver.name", read_only=True)
+    vehicle = serializers.CharField(source="driver.vehicle", read_only=True)
+    contact_number = serializers.CharField(
+        source="driver.contact_number", read_only=True
+    )
+    driver_id = serializers.CharField(source="driver.driver_id", read_only=True)
+    address = serializers.CharField(source="driver.address", read_only=True)
+    class Meta:
+        model = User
+        fields = [
+            "driver_id",
+            "email",
+            "role",
+            "name",
+            "contact_number",
+            "is_active",
+            "id",
+            "vehicle",
+            "address"
+        ]

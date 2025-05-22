@@ -12,7 +12,7 @@ from NGO.models import Orders
 # Create your models here.
 class Donor(models.Model):
     donor_id = models.BigAutoField(primary_key=True)
-    login_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    login_id = models.OneToOneField(User, on_delete=models.CASCADE,related_name='donor')
     name = models.CharField(max_length=100)
     contact_number = PhoneNumberField()
     address = models.TextField(null=True, blank=True)

@@ -27,3 +27,24 @@ class RegisterSerializer(serializers.ModelSerializer):
         Donor.objects.create(login_id=user, **donor_data)
 
         return user
+
+class DonorUserSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="donor.name", read_only=True)
+    address = serializers.CharField(source="donor.address", read_only=True)
+    contact_number = serializers.CharField(
+        source="donor.contact_number", read_only=True
+    )
+    donor_id = serializers.CharField(source="staff.donor_id", read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "donor_id",
+            "email",
+            "role",
+            "name",
+            "contact_number",
+            "is_active",
+            "id",
+            "address",
+        ]

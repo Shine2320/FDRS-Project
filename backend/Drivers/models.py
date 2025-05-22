@@ -10,10 +10,11 @@ from Main.models import User
 # Create your models here.
 class Driver(models.Model):
     driver_id = models.BigAutoField(primary_key=True)
-    login_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    login_id = models.OneToOneField(User, on_delete=models.CASCADE,related_name="driver")
     name = models.CharField(max_length=100)
     contact_number = PhoneNumberField()
     vehicle = models.TextField()
+    address = models.TextField(null=True, blank=True)
 
 
 class Deliveries(models.Model):

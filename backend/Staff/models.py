@@ -11,3 +11,4 @@ class Staff(models.Model):
     )
     name = models.CharField(max_length=100)
     contact_number = PhoneNumberField()
+    address = models.TextField(null=True, blank=True)

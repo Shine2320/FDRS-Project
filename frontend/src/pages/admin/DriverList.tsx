@@ -4,57 +4,61 @@ import type { ColumnsType } from "antd/es/table";
 import { axiosPrivateInstance } from "../../api/apiConfig";
 import useAuth from "../../hooks/useAuth";
 
-interface StaffMember {
+interface DriverMember {
   id: number;
-  staff_id: string;
+  donor_id: string;
   name: string;
   email: string;
   contact_number: string;
+  address: string;
+  vehicle: string;
   role: string;
   is_active: boolean;
-  address: string;
 }
 
-const StaffList: React.FC = () => {
+const DriverList: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
-  const [staffData, setStaffData] = useState<StaffMember[]>([]);
+  const [driverData, setDriverData] = useState<DriverMember[]>([]);
   const { accessToken } = useAuth();
-
-  const fetchStaffData = async () => {
+  const baseUrl = "driver";
+  const fetchDonorData = async () => {
     setLoading(true);
     try {
-      const response = await axiosPrivateInstance.get("/staff/list/");
-      setStaffData(response.data);
+      const response = await axiosPrivateInstance.get(`/${baseUrl}/list/`);
+      setDriverData(response.data);
     } catch (error) {
-      message.error("Failed to fetch staff data");
+      message.error("Failed to fetch driver data");
       console.error("Fetch error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleActiveStatus = async (record: StaffMember) => {
+  const toggleActiveStatus = async (record: DriverMember) => {
     try {
       const newStatus = !record.is_active;
 
-      await axiosPrivateInstance.patch(`/staff/${record.id}/update-status/`, {
-        is_active: newStatus,
-      });
-      message.success(
-        `Staff ${record.name} is now ${newStatus ? "active" : "disabled"}`
+      await axiosPrivateInstance.patch(
+        `/${baseUrl}/${record.id}/update-status/`,
+        {
+          is_active: newStatus,
+        }
       );
-      fetchStaffData(); // Refresh data
+      message.success(
+        `Driver ${record.name} is now ${newStatus ? "active" : "disabled"}`
+      );
+      fetchDonorData(); // Refresh data
     } catch (error) {
       message.error("Failed to update status");
       console.error("Update status error:", error);
     }
   };
 
-  const columns: ColumnsType<StaffMember> = [
+  const columns: ColumnsType<DriverMember> = [
     {
-      title: "Staff ID",
-      dataIndex: "staff_id",
-      key: "staff_id",
+      title: "Driver ID",
+      dataIndex: "driver_id",
+      key: "driver_id",
     },
     {
       title: "Name",
@@ -72,9 +76,14 @@ const StaffList: React.FC = () => {
       key: "contact_number",
     },
     {
-      title: "address",
+      title: "Address",
       dataIndex: "address",
       key: "address",
+    },
+    {
+      title: "Vehicle No",
+      dataIndex: "vehicle",
+      key: "vehicle",
     },
     {
       title: "Status",
@@ -100,15 +109,15 @@ const StaffList: React.FC = () => {
   ];
 
   useEffect(() => {
-    if (accessToken) fetchStaffData();
+    if (accessToken) fetchDonorData();
   }, [accessToken]);
 
   return (
     <div style={{ padding: "24px" }}>
-      <h1>Staff List</h1>
+      <h1>Driver List</h1>
       <Table
         columns={columns}
-        dataSource={staffData}
+        dataSource={driverData}
         loading={loading}
         rowKey="id"
         pagination={{
@@ -120,4 +129,4 @@ const StaffList: React.FC = () => {
   );
 };
 
-export default StaffList;
+export default DriverList;

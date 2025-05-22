@@ -9,3 +9,45 @@ body {
 .ant-message {
   z-index: 9999 !important;
 }
+/* when dark mode is active, you’ll add a class on <body> */
+body.dark-mode {
+  background: #141414;
+  color: #f0f0f0;
+}
+
+/* light mode */
+body.light-mode {
+  background: #fff;
+  color: #000;
+}
+
+:root {
+  --input-bg: #fff; /* light-mode input background */
+  --input-text: #000; /* light-mode text */
+}
+
+body.dark-mode {
+  --input-bg: #141414; /* dark-mode input background */
+  --input-text: #eee; /* dark-mode text */
+}
+
+/* make sure these are loaded *after* any AntD component CSS */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  /* 1. force your theme’s background color */
+  box-shadow: inset 0 0 0 1000px var(--input-bg) !important;
+  /* 2. force your theme’s text color */
+  -webkit-text-fill-color: var(--input-text) !important;
+  /* 3. prevent Chrome’s animation from flashing yellow */
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
+/* same for focus/hover states */
+input:-webkit-autofill:focus,
+input:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:hover {
+  box-shadow: inset 0 0 0 1000px var(--input-bg) !important;
+  -webkit-text-fill-color: var(--input-text) !important;
+}

@@ -5,5 +5,5 @@ from .views import RegisterView, StaffUserListView, StaffStatusUpdateView
 urlpatterns = [
     path("register/", RegisterView.as_view()),
     path("list/", StaffUserListView.as_view()),
-    path("staff/<int:pk>/update-status/", StaffStatusUpdateView.as_view()),
+    path("<int:pk>/update-status/", StaffStatusUpdateView.as_view()),
 ]

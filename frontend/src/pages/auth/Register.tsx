@@ -50,7 +50,7 @@ const Register = () => {
           payload.donor = {
             name: (values as DonorFields).full_name,
             contact_number: "+91" + values.contact_number,
-            address: (values as DonorFields).address,
+            address: values.address,
           };
           baseUrl = "donor";
           break;
@@ -58,7 +58,7 @@ const Register = () => {
           payload.ngo = {
             organization_name: (values as NgoFields).organization_name,
             contact_number: "+91" + values.contact_number,
-            address: (values as NgoFields).address,
+            address: values.address,
           };
           baseUrl = "ngo";
           break;
@@ -66,6 +66,7 @@ const Register = () => {
           payload.staff = {
             name: (values as StaffFields).full_name,
             contact_number: "+91" + values.contact_number,
+            address: values.address,
           };
           baseUrl = "staff";
           break;
@@ -74,6 +75,7 @@ const Register = () => {
             name: (values as DriverFields).full_name,
             contact_number: "+91" + values.contact_number,
             vehicle: (values as DriverFields).vehicle_info,
+            address: values.address,
           };
           baseUrl = "driver";
           break;
@@ -139,6 +141,13 @@ const Register = () => {
           prefix={<PhoneOutlined />}
         />
       </Form.Item>
+      <Form.Item
+        name="address"
+        label="Address"
+        rules={[{ required: true, message: "Please enter your full name" }]}
+      >
+        <Input prefix={<HomeOutlined />} />
+      </Form.Item>
     </>
   );
 
@@ -152,13 +161,7 @@ const Register = () => {
       >
         <Input prefix={<UserOutlined />} />
       </Form.Item>
-      <Form.Item
-        name="address"
-        label="Address"
-        rules={[{ required: true, message: "Please enter your full name" }]}
-      >
-        <Input prefix={<HomeOutlined />} />
-      </Form.Item>
+
       <Form.Item>
         <Button type="primary" htmlType="submit" block loading={loading}>
           Register as Donor
@@ -179,13 +182,7 @@ const Register = () => {
       >
         <Input prefix={<ShopOutlined />} />
       </Form.Item>
-      <Form.Item
-        name="address"
-        label="Address"
-        rules={[{ required: true, message: "Please enter your full name" }]}
-      >
-        <Input prefix={<HomeOutlined />} />
-      </Form.Item>
+
       <Form.Item>
         <Button type="primary" htmlType="submit" block loading={loading}>
           Register as NGO

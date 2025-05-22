@@ -7,7 +7,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 # Create your models here.
 class NGO(models.Model):
     ngo_id = models.BigAutoField(primary_key=True)
-    login_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    login_id = models.OneToOneField(User, on_delete=models.CASCADE,related_name='ngo')
     organization_name = models.CharField(max_length=150)
     contact_number = PhoneNumberField()
     address = models.TextField(null=True, blank=True)

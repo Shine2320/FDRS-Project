@@ -27,3 +27,23 @@ class RegisterSerializer(serializers.ModelSerializer):
         NGO.objects.create(login_id=user, **ngo_data)
 
         return user
+
+class NGOUserSerializer(serializers.ModelSerializer):
+    organization_name = serializers.CharField(source="ngo.organization_name", read_only=True)
+    contact_number = serializers.CharField(
+        source="ngo.contact_number", read_only=True
+    )
+    ngo_id = serializers.CharField(source="ngo.ngo_id", read_only=True)
+    address = serializers.CharField(source="ngo.address", read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "ngo_id",
+            "email",
+            "role",
+            "organization_name",
+            "contact_number",
+            "is_active",
+            "id",'address'
+        ]
