@@ -4,9 +4,10 @@ from rest_framework_simplejwt import views as jwt_views
 
 import Donors.urls
 import Drivers.urls
+import MainAdmin.urls
 import NGO.urls
 import Staff.urls
-from .views import HomeView, LogoutView, CustomTokenObtainPairView,CustomTokenRefreshView
+from .views import HomeView, LogoutView, CustomTokenObtainPairView, CustomTokenRefreshView, UserStatusUpdateView
 import Donors, NGO, Staff, Drivers
 
 
@@ -16,6 +17,7 @@ urlpatterns = [
     path("driver/", include(Drivers.urls)),
     path("ngo/", include(NGO.urls)),
     path("staff/", include(Staff.urls)),
+    path("api/reports/", include(MainAdmin.urls)),
     path("logout/", LogoutView.as_view()),
     path("auth/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path(
@@ -23,4 +25,5 @@ urlpatterns = [
         CustomTokenRefreshView.as_view(),
         name="token_refresh",
     ),
+    path("<int:pk>/update-status/", UserStatusUpdateView.as_view()),
 ]

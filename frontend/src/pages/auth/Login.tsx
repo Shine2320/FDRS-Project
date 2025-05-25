@@ -12,6 +12,7 @@ const { Title, Text, Link } = Typography;
 export default function Login() {
   const { setAccessToken, setIsLoggedIn } = useAuth();
   const setCurrentUserRole = useAuthStore((state) => state.setCurrentUserRole);
+  const setCurrentUserName = useAuthStore((state) => state.setCurrentUserName);
   const navigate = useNavigate();
   const location = useLocation();
   const fromLocation =
@@ -34,8 +35,10 @@ export default function Login() {
       if (response?.data?.access) {
         const decoded: any = jwtDecode(response.data.access);
         setCurrentUserRole(decoded.role);
+        setCurrentUserName(decoded.name);
       }
-      localStorage.clear();
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("isLoggedIn");
       localStorage.setItem("refresh_token", response?.data?.refresh);
       setAccessToken(response?.data?.access_token);
       setIsLoggedIn(true);
@@ -50,9 +53,15 @@ export default function Login() {
   };
 
   return (
-    <Row justify="center" align="middle" style={{ minHeight: "100vh" }}>
+    <Row
+      justify="center"
+      align="middle"
+      style={{
+        minHeight: "100%",
+      }}
+    >
       <Col xs={22} sm={16} md={12} lg={8}>
-        <Card>
+        <Card className="blur-bg">
           <Space
             direction="vertical"
             style={{ width: "100%", textAlign: "center" }}

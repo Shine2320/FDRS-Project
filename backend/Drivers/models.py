@@ -5,6 +5,7 @@ from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
 from Main.models import User
+from NGO.models import Orders
 
 
 # Create your models here.
@@ -30,8 +31,9 @@ class Deliveries(models.Model):
     )
     delivery_id = models.BigAutoField(primary_key=True)
     driver_id = models.ForeignKey(
-        Driver, on_delete=models.CASCADE, db_column="driver_id"
+        Driver, on_delete=models.CASCADE, db_column="driver_id",related_name="driver"
     )
-    pickup_time = models.DateTimeField(default=datetime.datetime.now)
-    delivery_time = models.DateTimeField()
+    order_id = models.OneToOneField("NGO.Orders", on_delete=models.CASCADE, db_column="order_id",related_name="orders",null=True)
+    pickup_time = models.DateTimeField(null=True, blank=True)
+    delivery_time = models.DateTimeField(null=True, blank=True)
     status = models.IntegerField(choices=STATUS_TYPE, default=PENDING)

@@ -1,20 +1,23 @@
 import { Routes, Navigate, Route, useLocation } from "react-router-dom";
-import AuthMiddleware from "./middlewares/AuthMiddleware";
 import Login from "./pages/auth/Login";
-import Home from "./pages/Home";
-import User from "./pages/auth/LoggedInPage";
+import { Home } from "./pages/Home";
 import PersistLogin from "./components/PersistLogin";
 import Register from "./pages/auth/Register";
 import Navbar from "./components/Navbar";
 import StaffList from "./pages/admin/StaffList";
 import DriverList from "./pages/admin/DriverList";
-import DonorList from "./pages/admin/Donor";
+import DonorList from "./pages/admin/DonorList";
 import NGOList from "./pages/admin/NGOList";
 import PageWrapper from "./components/pageWrapper";
 import { AnimatePresence } from "framer-motion";
 import { ConfigProvider, theme } from "antd";
 import { useUITheme } from "./Store";
 import { useEffect } from "react";
+import Profile from "./components/UserProfileCard";
+import InventoryTable from "./pages/Donor/Inventory";
+import AuthMiddleware from "./middlewares/AuthMiddleware";
+import OrderTable from "./pages/NGO/OrderList";
+import ReportsDashboard from "./pages/admin/ReportsDashBoard";
 
 function App() {
   const location = useLocation();
@@ -63,40 +66,75 @@ function App() {
                   }
                 />
               </Route>
-
               {/* Admin section */}
-              <Route
-                path="admin/StaffList"
-                element={
-                  <PageWrapper>
-                    <StaffList />
-                  </PageWrapper>
-                }
-              />
-              <Route
-                path="admin/DriverList"
-                element={
-                  <PageWrapper>
-                    <DriverList />
-                  </PageWrapper>
-                }
-              />
-              <Route
-                path="admin/DonorList"
-                element={
-                  <PageWrapper>
-                    <DonorList />
-                  </PageWrapper>
-                }
-              />
-              <Route
-                path="admin/NGOList"
-                element={
-                  <PageWrapper>
-                    <NGOList />
-                  </PageWrapper>
-                }
-              />
+              <Route element={<AuthMiddleware></AuthMiddleware>}>
+                <Route path="admin">
+                  <Route
+                    path="StaffList"
+                    element={
+                      <PageWrapper>
+                        <StaffList />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="DriverList"
+                    element={
+                      <PageWrapper>
+                        <DriverList />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="DonorList"
+                    element={
+                      <PageWrapper>
+                        <DonorList />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="NGOList"
+                    element={
+                      <PageWrapper>
+                        <NGOList />
+                      </PageWrapper>
+                    }
+                  />
+                </Route>
+                <Route
+                  path="profile"
+                  element={
+                    <PageWrapper>
+                      <Profile />
+                    </PageWrapper>
+                  }
+                />
+                <Route
+                  path="inventory"
+                  element={
+                    <PageWrapper>
+                      <InventoryTable />
+                    </PageWrapper>
+                  }
+                />
+                <Route
+                  path="orderList"
+                  element={
+                    <PageWrapper>
+                      <OrderTable />
+                    </PageWrapper>
+                  }
+                />
+                <Route
+                  path="reports"
+                  element={
+                    <PageWrapper>
+                      <ReportsDashboard />
+                    </PageWrapper>
+                  }
+                />
+              </Route>
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

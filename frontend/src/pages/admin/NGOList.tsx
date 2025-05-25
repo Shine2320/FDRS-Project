@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Table, Space, Button, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { axiosPrivateInstance } from "../../api/apiConfig";
 import useAuth from "../../hooks/useAuth";
+import useAxiosPrivate from "../../hooks/usePrivate";
 
 interface NGOMember {
   id: number;
@@ -16,6 +16,7 @@ interface NGOMember {
 }
 
 const NGOList: React.FC = () => {
+  const axiosPrivateInstance = useAxiosPrivate();
   const [loading, setLoading] = useState<boolean>(false);
   const [NGOData, setNGOData] = useState<NGOMember[]>([]);
   const { accessToken } = useAuth();
@@ -37,12 +38,9 @@ const NGOList: React.FC = () => {
     try {
       const newStatus = !record.is_active;
 
-      await axiosPrivateInstance.patch(
-        `/${baseUrl}/${record.id}/update-status/`,
-        {
-          is_active: newStatus,
-        }
-      );
+      await axiosPrivateInstance.patch(`/${record.id}/update-status/`, {
+        is_active: newStatus,
+      });
       message.success(
         `NGO ${record.name} is now ${newStatus ? "active" : "disabled"}`
       );
@@ -110,6 +108,7 @@ const NGOList: React.FC = () => {
     <div style={{ padding: "24px" }}>
       <h1>NGO List</h1>
       <Table
+        bordered={true}
         columns={columns}
         dataSource={NGOData}
         loading={loading}

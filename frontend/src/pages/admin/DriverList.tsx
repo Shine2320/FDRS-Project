@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Table, Space, Button, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { axiosPrivateInstance } from "../../api/apiConfig";
 import useAuth from "../../hooks/useAuth";
+import useAxiosPrivate from "../../hooks/usePrivate";
 
 interface DriverMember {
   id: number;
-  donor_id: string;
+  driver_id: number;
   name: string;
   email: string;
   contact_number: string;
@@ -16,7 +16,11 @@ interface DriverMember {
   is_active: boolean;
 }
 
-const DriverList: React.FC = () => {
+const DriverList: React.FC<{
+  isModal?: boolean;
+  assignDriver?: (id: number) => {};
+}> = ({ isModal, assignDriver }) => {
+  const axiosPrivateInstance = useAxiosPrivate();
   const [loading, setLoading] = useState<boolean>(false);
   const [driverData, setDriverData] = useState<DriverMember[]>([]);
   const { accessToken } = useAuth();
@@ -38,12 +42,9 @@ const DriverList: React.FC = () => {
     try {
       const newStatus = !record.is_active;
 
-      await axiosPrivateInstance.patch(
-        `/${baseUrl}/${record.id}/update-status/`,
-        {
-          is_active: newStatus,
-        }
-      );
+      await axiosPrivateInstance.patch(`/${record.id}/update-status/`, {
+        is_active: newStatus,
+      });
       message.success(
         `Driver ${record.name} is now ${newStatus ? "active" : "disabled"}`
       );
@@ -96,13 +97,22 @@ const DriverList: React.FC = () => {
       key: "action",
       render: (_, record) => (
         <Space>
-          <Button
-            type={record.is_active ? "default" : "primary"}
-            danger={record.is_active}
-            onClick={() => toggleActiveStatus(record)}
-          >
-            {record.is_active ? "Disable" : "Activate"}
-          </Button>
+          {!isModal ? (
+            <Button
+              type={record.is_active ? "default" : "primary"}
+              danger={record.is_active}
+              onClick={() => toggleActiveStatus(record)}
+            >
+              {record.is_active ? "Disable" : "Activate"}
+            </Button>
+          ) : (
+            <Button
+              type={"primary"}
+              onClick={() => assignDriver && assignDriver(record.driver_id)}
+            >
+              Assign
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -113,9 +123,10 @@ const DriverList: React.FC = () => {
   }, [accessToken]);
 
   return (
-    <div style={{ padding: "24px" }}>
-      <h1>Driver List</h1>
+    <div style={{ padding: isModal ? 5 : 24 }}>
+      {!isModal && <h1>Driver List</h1>}
       <Table
+        bordered={true}
         columns={columns}
         dataSource={driverData}
         loading={loading}

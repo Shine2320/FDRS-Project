@@ -11,6 +11,7 @@ export default function useRefreshToken() {
   const { isLoggedIn, setAccessToken, setIsLoggedIn, setRefreshToken } =
     useAuth();
   const setCurrentUserRole = useAuthStore((state) => state.setCurrentUserRole);
+  const setCurrentUserName = useAuthStore((state) => state.setCurrentUserName);
 
   const refresh = async (): Promise<RefreshResponse | void> => {
     if (!isLoggedIn) {
@@ -29,6 +30,7 @@ export default function useRefreshToken() {
       setAccessToken(accessToken);
       const decoded: any = jwtDecode(response.data.access);
       setCurrentUserRole(decoded.role);
+      setCurrentUserName(decoded.name);
 
       return { accessToken };
     } else {

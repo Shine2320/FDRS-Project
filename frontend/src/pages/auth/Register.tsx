@@ -234,9 +234,9 @@ const Register = () => {
   );
 
   return (
-    <Row justify="center" align="middle" style={{ minHeight: "100vh" }}>
+    <Row justify="center" align="middle" style={{ minHeight: "100%" }}>
       <Col xs={22} sm={16} md={12} lg={8}>
-        <Card>
+        <Card className="blur-bg">
           <Title level={3} style={{ textAlign: "center" }}>
             Register
           </Title>

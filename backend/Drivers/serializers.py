@@ -1,7 +1,9 @@
 # accounts/serializers.py
 
 from rest_framework import serializers
-from .models import User,Driver
+
+from NGO.models import Orders
+from .models import User, Driver, Deliveries
 
 
 class DriverSerializer(serializers.ModelSerializer):
@@ -29,13 +31,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 class DriverUserSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source="driver.name", read_only=True)
-    vehicle = serializers.CharField(source="driver.vehicle", read_only=True)
+    name = serializers.CharField(source="driver.name",)
+    vehicle = serializers.CharField(source="driver.vehicle", )
     contact_number = serializers.CharField(
-        source="driver.contact_number", read_only=True
+        source="driver.contact_number",
     )
     driver_id = serializers.CharField(source="driver.driver_id", read_only=True)
-    address = serializers.CharField(source="driver.address", read_only=True)
+    address = serializers.CharField(source="driver.address", )
     class Meta:
         model = User
         fields = [
@@ -49,3 +51,28 @@ class DriverUserSerializer(serializers.ModelSerializer):
             "vehicle",
             "address"
         ]
+    def update(self, instance, validated_data):
+        # 1) Pop off nested donor data
+        driver_data = validated_data.pop("driver", {})
+
+        # 2) Update User fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # 3) Update Donor fields
+        driver = instance.driver
+        for attr, value in driver_data.items():
+            setattr(driver, attr, value)
+        driver.save()
+
+        return instance
+
+class DeliverySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Deliveries
+        fields = '__all__'
+
+
+
+

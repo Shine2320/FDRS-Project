@@ -1,12 +1,17 @@
+from django.utils import timezone
+
+from django.db import transaction
 from django.shortcuts import render
 from rest_framework import generics, status
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import RegisterSerializer, DriverUserSerializer
-from .models import User
+from NGO.models import Orders
+from .serializers import RegisterSerializer, DriverUserSerializer, DeliverySerializer
+from .models import User, Deliveries
 from rest_framework.decorators import permission_classes
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 
 
 # Create your views here.
@@ -17,22 +22,80 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
 
-@permission_classes([IsAdminUser])
-class DriverUserListView(generics.ListAPIView):
-    queryset = User.objects.filter(role=User.DRIVER).select_related("driver")
-    serializer_class = DriverUserSerializer
+class DriverUserListView(APIView):
+    def get(self,request):
+        if request.user.role in [User.STAFF, User.ADMIN]:
+            user = User.objects.filter(role=User.DRIVER).select_related("driver")
+            serializer_class = DriverUserSerializer(user, many=True)
+            return Response(serializer_class.data)
+        else:
+            user = User.objects.filter(pk=request.user.pk)
+            serializer = DriverUserSerializer(user, many=True)
+            return Response(serializer.data)
 
+    def put(self,request):
+        user = User.objects.get(pk=request.user.pk)
+        serializer = DriverUserSerializer(user,data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@permission_classes([IsAdminUser])
-class DriverStatusUpdateView(APIView):
+class DeliveryView(APIView):
+    def get(self,request,pk=None):
+        if pk is not None:
+            delivery = Deliveries.objects.get(pk=pk)
+            serializer = DeliverySerializer(delivery)
+            return Response(serializer.data)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    def post(self,request):
+        serializer = DeliverySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def patch(self, request, pk):
-        try:
-            user = User.objects.get(pk=pk)
-            is_active = request.data.get("is_active")
-            user.is_active = is_active
-            user.save()
-            return Response({"status": "updated"}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
+        # 1) Fetch the delivery for this order or 404
+        delivery = get_object_or_404(Deliveries, order_id=pk)
+        order = delivery.order_id
+        new_status = request.data.get('status')
+        inventory = order.inventory_id
+        # 2) Compute timestamps
+        now = timezone.now()
+
+        # 3) Apply business logic
+        if new_status == Deliveries.IN_TRANSIT:
+            delivery.status = new_status
+            delivery.pickup_time = now
+
+        elif new_status == Deliveries.DELIVERED:
+            delivery.status = new_status
+            delivery.delivery_time = now
+            order.status = Orders.DELIVERED
+
+        elif new_status == Deliveries.FAILED:
+            delivery.status = new_status
+            # restock the inventory
+
+            inventory.quantity = inventory.quantity + order.quantity
+            order.status = Orders.FAILED
+
+        else:
             return Response(
-                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+                {'status': 'Invalid status'},
+                status=status.HTTP_400_BAD_REQUEST
             )
+
+        # 4) Save everything in one atomic block
+        with transaction.atomic():
+            order.save()
+            # if you modified inventory:
+            if new_status == Deliveries.FAILED:
+                inventory.save()
+            delivery.save()
+
+        # 5) Serialize & return the updated delivery
+        serializer = DeliverySerializer(delivery)
+        return Response(serializer.data, status=status.HTTP_200_OK)

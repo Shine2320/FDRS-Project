@@ -1,10 +1,11 @@
-import useAuth from "../hooks/useAuth"
-import { Navigate, Outlet, useLocation } from "react-router-dom"
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 export default function AuthMiddleware() {
-    const { accessToken } = useAuth()
-    const location = useLocation()
+  const location = useLocation();
 
-    return (accessToken ? <Outlet /> : <Navigate to="/" state={{ from: location }} replace />)
-
+  return localStorage.getItem("refresh_token") ? (
+    <Outlet />
+  ) : (
+    <Navigate to="/" state={{ from: location }} replace />
+  );
 }

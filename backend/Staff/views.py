@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from .serializers import RegisterSerializer, StaffUserSerializer
 from .models import User
 from rest_framework.decorators import permission_classes
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -17,22 +17,23 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
 
-@permission_classes([IsAdminUser])
-class StaffUserListView(generics.ListAPIView):
-    queryset = User.objects.filter(role=User.STAFF).select_related("staff")
-    serializer_class = StaffUserSerializer
+@permission_classes([IsAuthenticated])
+class StaffUserListView(APIView):
+    def get(self,request):
+        if request.user.is_staff:
+            permission_classes([IsAdminUser])
+            user = User.objects.filter(role=User.STAFF).select_related("ngo")
+            serializer_class = StaffUserSerializer(user, many=True)
+            return Response(serializer_class.data)
+        else:
+            user = User.objects.filter(pk=request.user.pk)
+            serializer = StaffUserSerializer(user, many=True)
+            return Response(serializer.data)
 
-
-@permission_classes([IsAdminUser])
-class StaffStatusUpdateView(APIView):
-    def patch(self, request, pk):
-        try:
-            user = User.objects.get(pk=pk)
-            is_active = request.data.get("is_active")
-            user.is_active = is_active
-            user.save()
-            return Response({"status": "updated"}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response(
-                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+    def put(self,request):
+        user = User.objects.get(pk=request.user.pk)
+        serializer = StaffUserSerializer(user,data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

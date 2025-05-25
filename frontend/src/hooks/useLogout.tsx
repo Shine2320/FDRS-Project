@@ -18,14 +18,16 @@ export default function useLogout() {
         .post("logout/", { refresh_token: refreshToken })
         .catch(() => {
           setCurrentUserRole(Role.None);
-          localStorage.clear();
+          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("isLoggedIn");
           setAccessToken(null);
           setUser({});
           setIsLoggedIn(false);
           navigate(fromLocation, { replace: true });
         });
       setCurrentUserRole(Role.None);
-      localStorage.clear();
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("isLoggedIn");
       setAccessToken(null);
       setUser({});
       setIsLoggedIn(false);

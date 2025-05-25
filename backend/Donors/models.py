@@ -27,18 +27,19 @@ class Inventory(models.Model):
         (RESERVED, "Reserved"),
         (EXPIRED, "Expired"),
     )
+    PACKED = 0
+    NON_PACKED = 1
+    FOOD_TYPES = (
+        (PACKED, "Packed"),
+        (NON_PACKED, "Non-packed"),
+    )
     inventory_id = models.BigAutoField(primary_key=True)
-    donor_id = models.ForeignKey(Donor, on_delete=models.CASCADE, db_column="donor_id")
-    food_type = models.CharField(max_length=100)
+    donor_id = models.ForeignKey(Donor, on_delete=models.CASCADE, db_column="donor_id",related_name='donor')
+    food_type = models.SmallIntegerField(choices=FOOD_TYPES, default=PACKED)
+    item_name = models.CharField(max_length=200, default='')
     quantity = models.IntegerField()
     expiration_date = models.DateField()
     status = models.SmallIntegerField(choices=STATUS_TYPE, default=AVAILABLE)
 
 
-class Donation(models.Model):
-    donation_id = models.BigAutoField(primary_key=True)
-    order_id = models.ForeignKey(Orders, on_delete=models.CASCADE, db_column="order_id")
-    delivery_id = models.ForeignKey(
-        Deliveries, on_delete=models.CASCADE, db_column="delivery_id"
-    )
-    donation_time = models.DateTimeField(default=datetime.datetime.now)
+

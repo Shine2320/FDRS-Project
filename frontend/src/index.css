@@ -1,4 +1,4 @@
-:root,
+#root,
 html,
 body {
   margin: 0;
@@ -19,6 +19,7 @@ body.dark-mode {
 body.light-mode {
   background: #fff;
   color: #000;
+  background-image: url("/public/bg.png");
 }
 
 :root {
@@ -29,6 +30,7 @@ body.light-mode {
 body.dark-mode {
   --input-bg: #141414; /* dark-mode input background */
   --input-text: #eee; /* dark-mode text */
+  background-image: url("/public/darkBg.png");
 }
 
 /* make sure these are loaded *after* any AntD component CSS */
@@ -50,4 +52,34 @@ textarea:-webkit-autofill:focus,
 textarea:-webkit-autofill:hover {
   box-shadow: inset 0 0 0 1000px var(--input-bg) !important;
   -webkit-text-fill-color: var(--input-text) !important;
+}
+
+.bits-blur-text {
+  filter: blur(2px);
+  transition: filter 0.3s ease;
+}
+.bits-blur-text.revealed {
+  filter: blur(0);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.blur-bg {
+  background: rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.recharts-legend-item {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: center !important;
+  align-items: center !important;
 }

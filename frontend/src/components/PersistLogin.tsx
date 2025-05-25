@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
-import useAxiosPrivate from "../hooks/usePrivate";
 import useRefreshToken from "../hooks/useRefreshToken";
 
 export default function PersistLogin() {
   const refresh = useRefreshToken();
-  const { accessToken, isLoggedIn, setUser } = useAuth();
+  const { accessToken, isLoggedIn, } = useAuth();
   const [loading, setLoading] = useState(true);
-  const axiosPrivate = useAxiosPrivate();
 
   useEffect(() => {
     let isMounted = true;
@@ -35,5 +33,5 @@ export default function PersistLogin() {
     };
   }, []);
 
-  return loading ? "Loading" : <Outlet />;
+  return loading ? "" : <Outlet />;
 }

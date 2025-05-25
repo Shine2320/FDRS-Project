@@ -1,15 +1,9 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { Layout, Menu, Switch, Typography } from "antd";
-import {
-  BulbOutlined,
-  BulbFilled,
-  LogoutOutlined,
-  MoonFilled,
-  SunFilled,
-} from "@ant-design/icons";
+import { LogoutOutlined, MoonFilled, SunFilled } from "@ant-design/icons";
 import useAuth from "../hooks/useAuth";
 import useLogout from "../hooks/useLogout";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useAuthStore, useUITheme } from "../Store";
 import { Role } from "../constants/roles";
 
@@ -20,29 +14,93 @@ export default function Navbar() {
   const { isLoggedIn } = useAuth();
   const role = useAuthStore((s) => s.currentUserRole);
   const logout = useLogout();
-  // Zustand store for theme state
   const darkMode = useUITheme((s) => s.darkMode);
   const setDarkMode = useUITheme((s) => s.setDarkMode);
 
+  // get current path for menu selection
+  const location = useLocation();
+  const currentPath = location.pathname;
+
   const renderNavItems = useCallback(() => {
-    if (role === Role.Admin) {
-      return [
-        {
-          key: "staff-list",
-          label: <NavLink to="/admin/StaffList">Staff</NavLink>,
-        },
-        {
-          key: "driver-list",
-          label: <NavLink to="/admin/DriverList">Drivers</NavLink>,
-        },
-        {
-          key: "donor-list",
-          label: <NavLink to="/admin/DonorList">Donors</NavLink>,
-        },
-        { key: "ngo-list", label: <NavLink to="/admin/NGOList">NGOs</NavLink> },
-      ];
+    switch (role) {
+      case Role.Donor:
+        return [
+          { key: "/profile", label: <NavLink to="/profile">Profile</NavLink> },
+          {
+            key: "/inventory",
+            label: <NavLink to="/inventory">Inventory</NavLink>,
+          },
+          {
+            key: "/orderList",
+            label: <NavLink to="/orderList">Orders</NavLink>,
+          },
+        ];
+      case Role.Ngo:
+        return [
+          { key: "/profile", label: <NavLink to="/profile">Profile</NavLink> },
+          {
+            key: "/inventory",
+            label: <NavLink to="/inventory">Inventory</NavLink>,
+          },
+          {
+            key: "/orderList",
+            label: <NavLink to="/orderList">Orders</NavLink>,
+          },
+        ];
+      case Role.Staff:
+        return [
+          { key: "/profile", label: <NavLink to="/profile">Profile</NavLink> },
+          {
+            key: "/inventory",
+            label: <NavLink to="/inventory">Inventory</NavLink>,
+          },
+          {
+            key: "/orderList",
+            label: <NavLink to="/orderList">Orders</NavLink>,
+          },
+        ];
+      case Role.Driver:
+        return [
+          { key: "/profile", label: <NavLink to="/profile">Profile</NavLink> },
+          {
+            key: "/orderList",
+            label: <NavLink to="/orderList">Orders</NavLink>,
+          },
+        ];
+      case Role.Admin:
+        return [
+          {
+            key: "/admin/StaffList",
+            label: <NavLink to="/admin/StaffList">Staff</NavLink>,
+          },
+          {
+            key: "/admin/DriverList",
+            label: <NavLink to="/admin/DriverList">Drivers</NavLink>,
+          },
+          {
+            key: "/admin/DonorList",
+            label: <NavLink to="/admin/DonorList">Donors</NavLink>,
+          },
+          {
+            key: "/admin/NGOList",
+            label: <NavLink to="/admin/NGOList">NGO</NavLink>,
+          },
+          {
+            key: "/inventory",
+            label: <NavLink to="/inventory">Inventory</NavLink>,
+          },
+          {
+            key: "/orderList",
+            label: <NavLink to="/orderList">Orders</NavLink>,
+          },
+          {
+            key: "/reports",
+            label: <NavLink to="/reports">Reports</NavLink>,
+          },
+        ];
+      default:
+        return [];
     }
-    return [];
   }, [role]);
 
   const commonItems = renderNavItems();
@@ -58,12 +116,22 @@ export default function Navbar() {
         },
       ]
     : [
-        { key: "login", label: <NavLink to="/auth/login">Login</NavLink> },
         {
-          key: "register",
+          key: "/auth/login",
+          label: <NavLink to="/auth/login">Login</NavLink>,
+        },
+        {
+          key: "/auth/register",
           label: <NavLink to="/auth/register">Register</NavLink>,
         },
       ];
+
+  // build menu items
+  const menuItems = [
+    { key: "/", label: <NavLink to="/">Home</NavLink> },
+    ...commonItems,
+    ...(!isLoggedIn ? authItems : []),
+  ];
 
   return (
     <Header
@@ -75,28 +143,22 @@ export default function Navbar() {
         background: darkMode ? "#1f1f1f" : "#fff",
       }}
     >
-      {/* LEFT: logout or empty spacer */}
       <div style={{ flex: "0 0 auto", marginRight: 24 }}>
         {isLoggedIn && authItems.find((i) => i.key === "logout")?.label}
       </div>
 
-      {/* CENTER: main nav */}
       <Menu
         mode="horizontal"
-        selectable={false}
+        selectedKeys={[currentPath]}
         style={{
           flex: "1 1 auto",
           justifyContent: "center",
           background: "transparent",
           borderBottom: "none",
         }}
-        items={[
-          { key: "home", label: <NavLink to="/">Home</NavLink> },
-          ...commonItems,
-        ]}
+        items={menuItems}
       />
 
-      {/* RIGHT: login/register OR empty, then theme toggle */}
       <div
         style={{
           flex: "0 0 auto",
@@ -105,8 +167,6 @@ export default function Navbar() {
           gap: 16,
         }}
       >
-        {!isLoggedIn &&
-          authItems.map((i) => <span key={i.key}>{i.label}</span>)}
         <Switch
           checked={darkMode}
           onChange={(chk) => setDarkMode(chk)}

@@ -30,12 +30,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class StaffUserSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source="staff.name", read_only=True)
+    name = serializers.CharField(source="staff.name", )
     contact_number = serializers.CharField(
-        source="staff.contact_number", read_only=True
+        source="staff.contact_number",
     )
     staff_id = serializers.CharField(source="staff.staff_id", read_only=True)
-    address = serializers.CharField(source="staff.address", read_only=True)
+    address = serializers.CharField(source="staff.address", )
     class Meta:
         model = User
         fields = [
@@ -48,3 +48,20 @@ class StaffUserSerializer(serializers.ModelSerializer):
             "id",
             "address"
         ]
+
+    def update(self, instance, validated_data):
+        # 1) Pop off nested donor data
+        staff_data = validated_data.pop("staff", {})
+
+        # 2) Update User fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # 3) Update Donor fields
+        staff = instance.staff
+        for attr, value in staff_data.items():
+            setattr(staff, attr, value)
+        staff.save()
+
+        return instance

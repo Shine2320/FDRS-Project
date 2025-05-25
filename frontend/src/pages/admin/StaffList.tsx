@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Table, Space, Button, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { axiosPrivateInstance } from "../../api/apiConfig";
 import useAuth from "../../hooks/useAuth";
+import useAxiosPrivate from "../../hooks/usePrivate";
 
 interface StaffMember {
   id: number;
@@ -16,6 +16,7 @@ interface StaffMember {
 }
 
 const StaffList: React.FC = () => {
+  const axiosPrivateInstance = useAxiosPrivate();
   const [loading, setLoading] = useState<boolean>(false);
   const [staffData, setStaffData] = useState<StaffMember[]>([]);
   const { accessToken } = useAuth();
@@ -37,7 +38,7 @@ const StaffList: React.FC = () => {
     try {
       const newStatus = !record.is_active;
 
-      await axiosPrivateInstance.patch(`/staff/${record.id}/update-status/`, {
+      await axiosPrivateInstance.patch(`/${record.id}/update-status/`, {
         is_active: newStatus,
       });
       message.success(
@@ -107,6 +108,7 @@ const StaffList: React.FC = () => {
     <div style={{ padding: "24px" }}>
       <h1>Staff List</h1>
       <Table
+        bordered={true}
         columns={columns}
         dataSource={staffData}
         loading={loading}
