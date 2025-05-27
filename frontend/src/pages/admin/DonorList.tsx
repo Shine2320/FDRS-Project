@@ -93,7 +93,14 @@ const DonorList: React.FC = () => {
             danger={record.is_active}
             onClick={() => toggleActiveStatus(record)}
           >
-            {record.is_active ? "Disable" : "Activate"}
+            {record.is_active ? "Suspend" : "Activate"}
+          </Button>
+          <Button
+            type={record.is_active ? "default" : "primary"}
+            danger={record.is_active}
+            onClick={() => toggleActiveStatus(record)}
+          >
+            {record.is_active ? "Delete" : "Activate"}
           </Button>
         </Space>
       ),

@@ -5,7 +5,7 @@ import { useAuthStore } from "../Store";
 import useAuth from "./useAuth";
 
 export default function useLogout() {
-  const { setUser, setAccessToken, refreshToken, setIsLoggedIn } = useAuth();
+  const {  setAccessToken, refreshToken, setIsLoggedIn } = useAuth();
   const setCurrentUserRole = useAuthStore((state) => state.setCurrentUserRole);
   const location = useLocation();
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ export default function useLogout() {
           localStorage.removeItem("refresh_token");
           localStorage.removeItem("isLoggedIn");
           setAccessToken(null);
-          setUser({});
+          
           setIsLoggedIn(false);
           navigate(fromLocation, { replace: true });
         });
@@ -29,7 +29,7 @@ export default function useLogout() {
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("isLoggedIn");
       setAccessToken(null);
-      setUser({});
+      
       setIsLoggedIn(false);
       navigate(fromLocation, { replace: true });
     } catch (error) {
