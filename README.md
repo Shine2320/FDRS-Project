@@ -28,14 +28,39 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Apply migrations and create superuser:
+### 4. Configure PostgreSQL database
+
+Ensure your PostgreSQL database is set up and update the `DATABASES` setting in `backend/settings.py`:
+
+```python
+# settings.py
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'your_db_name',
+        'USER': 'your_db_user',
+        'PASSWORD': 'your_db_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+```
+
+Install the required PostgreSQL driver:
+
+```bash
+pip install psycopg2-binary
+```
+
+### 5. Apply migrations and create a superuser:
 
 ```bash
 python manage.py migrate
 python manage.py createsuperuser
 ```
 
-### 5. Run the development server:
+### 6. Run the development server:
 
 ```bash
 python manage.py runserver
@@ -69,24 +94,6 @@ npm run dev
 
 ---
 
-## 🌐 CORS Setup
-
-In your `settings.py` for Django, ensure the following is configured:
-
-```python
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
-```
-
-Install the middleware if needed:
-
-```bash
-pip install django-cors-headers
-```
-
----
-
 ## ✅ You're all set!
 
-Your Django backend and React frontend are now connected and ready to use locally.
+
