@@ -3,6 +3,8 @@
 from django.utils import timezone
 from rest_framework import serializers
 from .models import User, Donor,Inventory
+from Main.models import Notification
+from Main.services import create_staff_notifications, create_notification
 
 
 class DonorSerializer(serializers.ModelSerializer):
@@ -89,7 +91,28 @@ class InventorySerializer(serializers.ModelSerializer):
         # grab the logged-in user’s donor record
         donor = self.context['request'].user.donor
         # create the Inventory row, wiring in donor_id automatically
-        return Inventory.objects.create(donor_id=donor, **validated_data)
+        inventory = Inventory.objects.create(donor_id=donor, **validated_data)
+        if inventory.status == Inventory.AVAILABLE:
+            recipients = User.objects.filter(
+                role=User.NGO,
+                is_active=True,
+                deleted_at__isnull=True,
+            )
+            donor_name = donor.name or donor.login_id.email
+            item_name = inventory.item_name or "Donation"
+            for recipient in recipients:
+                create_notification(
+                    recipient,
+                    "New donation available",
+                    f"{item_name} is available from {donor_name}.",
+                    Notification.DONATION_AVAILABLE,
+                )
+            create_staff_notifications(
+                "New donation available",
+                f"{item_name} is available from {donor_name}.",
+                Notification.DONATION_AVAILABLE,
+            )
+        return inventory
 
     def validate(self, attrs):
         quantity = attrs.get("quantity", getattr(self.instance, "quantity", None))

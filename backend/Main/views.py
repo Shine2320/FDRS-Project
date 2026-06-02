@@ -13,6 +13,7 @@ from .serializers import (
     CustomTokenObtainPairSerializer,
     CustomTokenRefreshSerializer,
     NotificationSerializer,
+    PasswordResetSerializer,
 )
 
 
@@ -26,6 +27,19 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class CustomTokenRefreshView(TokenRefreshView):
     serializer_class = CustomTokenRefreshSerializer
+
+
+@permission_classes([AllowAny])
+class PasswordResetView(APIView):
+    def post(self, request):
+        serializer = PasswordResetSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Password reset successfully."},
+                status=status.HTTP_200_OK,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class HomeView(APIView):

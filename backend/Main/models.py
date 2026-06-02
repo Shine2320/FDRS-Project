@@ -67,6 +67,7 @@ class Notification(models.Model):
     DELIVERY_PICKED_UP = "delivery_picked_up"
     DELIVERY_DELIVERED = "delivery_delivered"
     DELIVERY_FAILED = "delivery_failed"
+    DONATION_AVAILABLE = "donation_available"
     EVENT_TYPE = (
         (ORDER_CREATED, "Order Created"),
         (ORDER_APPROVED, "Order Approved"),
@@ -74,6 +75,7 @@ class Notification(models.Model):
         (DELIVERY_PICKED_UP, "Delivery Picked Up"),
         (DELIVERY_DELIVERED, "Delivery Delivered"),
         (DELIVERY_FAILED, "Delivery Failed"),
+        (DONATION_AVAILABLE, "Donation Available"),
     )
     notification_id = models.BigAutoField(primary_key=True)
     recipient = models.ForeignKey(

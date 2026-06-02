@@ -10,7 +10,7 @@ from Drivers.models import Deliveries, Driver
 from Donors.models import Inventory
 from Donors.services import refresh_expired_inventory
 from Main.models import Notification
-from Main.services import create_notification
+from Main.services import create_notification, create_staff_notifications
 from .serializers import (
     RegisterSerializer,
     NGOUserSerializer,
@@ -20,6 +20,12 @@ from .serializers import (
 from .models import User, Orders
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+
+
+def get_ngo_profile(user):
+    if hasattr(user, "ngo"):
+        return user.ngo
+    return None
 
 
 # Create your views here.
@@ -139,13 +145,24 @@ class OrderView(APIView):
             serializer = OrderSerializer(orders_qs, many=True)
             return Response(serializer.data)
         else:
-            orders = Orders.objects.filter(ngo_id=request.user.ngo.ngo_id)
+            ngo = get_ngo_profile(request.user)
+            if ngo is None:
+                return Response(
+                    {"ngo": "NGO profile is missing for this user."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            orders = Orders.objects.filter(ngo_id=ngo.ngo_id)
             serializer_class = OrderSerializer(orders, many=True)
             return Response(serializer_class.data)
 
     def post(self,request):
         if request.user.role != User.NGO:
             return Response(status=status.HTTP_403_FORBIDDEN)
+        if get_ngo_profile(request.user) is None:
+            return Response(
+                {"ngo": "NGO profile is missing for this user."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         refresh_expired_inventory()
         serializer = OrderSerializer(
             data=request.data,
@@ -155,6 +172,11 @@ class OrderView(APIView):
             inv = serializer.save()
             create_notification(
                 inv.inventory_id.donor_id.login_id,
+                "New order request",
+                f"Order #{inv.order_id} was requested for {inv.inventory_id.item_name}.",
+                Notification.ORDER_CREATED,
+            )
+            create_staff_notifications(
                 "New order request",
                 f"Order #{inv.order_id} was requested for {inv.inventory_id.item_name}.",
                 Notification.ORDER_CREATED,
@@ -199,6 +221,11 @@ class OrderView(APIView):
                     f"Order #{order.order_id} has been assigned to you.",
                     Notification.ORDER_APPROVED,
                 )
+                create_staff_notifications(
+                    "Order approved",
+                    f"Order #{order.order_id} was approved and assigned.",
+                    Notification.ORDER_APPROVED,
+                )
             elif new_status == Orders.CANCELLED:
                 if order.status not in [Orders.CANCELLED, Orders.DELIVERED]:
                     inventory.quantity += order.quantity
@@ -222,6 +249,11 @@ class OrderView(APIView):
                     f"Your order #{order.order_id} was cancelled.",
                     Notification.ORDER_CANCELLED,
                 )
+                create_staff_notifications(
+                    "Order cancelled",
+                    f"Order #{order.order_id} was cancelled.",
+                    Notification.ORDER_CANCELLED,
+                )
             else:
                 return Response(
                     {'status': 'Invalid status'},
@@ -233,7 +265,13 @@ class OrderView(APIView):
 
 class OrderFeedbackView(APIView):
     def patch(self, request, pk):
-        order = get_object_or_404(Orders, pk=pk, ngo_id=request.user.ngo)
+        ngo = get_ngo_profile(request.user)
+        if ngo is None:
+            return Response(
+                {"ngo": "NGO profile is missing for this user."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        order = get_object_or_404(Orders, pk=pk, ngo_id=ngo)
         if order.status != Orders.DELIVERED:
             return Response(
                 {"error": "Feedback can be submitted after delivery only."},

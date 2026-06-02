@@ -12,6 +12,7 @@ import {
   Space,
   Card,
   Alert,
+  Modal,
 } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { jwtDecode } from "jwt-decode";
@@ -30,6 +31,9 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryForm] = Form.useForm();
 
   const onFinish = async (values: { email: string; password: string }) => {
     setLoading(true);
@@ -62,6 +66,34 @@ export default function Login() {
     } catch {
       setLoading(false);
       setLoginError("Invalid email or password. Please try again.");
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    setRecoveryLoading(true);
+    try {
+      const values = await recoveryForm.validateFields();
+      await axiosInstance.post("auth/password-reset/", values);
+      recoveryForm.resetFields();
+      setRecoveryOpen(false);
+      setLoginError(null);
+      Modal.success({
+        title: "Password reset",
+        content: "Your password has been reset. You can log in now.",
+      });
+    } catch (error: any) {
+      if (error?.response?.data) {
+        recoveryForm.setFields(
+          Object.entries(error.response.data).map(([name, errors]) => ({
+            name,
+            errors: Array.isArray(errors)
+              ? errors.map(String)
+              : [String(errors)],
+          }))
+        );
+      }
+    } finally {
+      setRecoveryLoading(false);
     }
   };
 
@@ -116,6 +148,12 @@ export default function Login() {
               <Input.Password placeholder="Password" />
             </Form.Item>
 
+            <Form.Item style={{ textAlign: "right", marginBottom: 16 }}>
+              <Link onClick={() => setRecoveryOpen(true)}>
+                Forgot password?
+              </Link>
+            </Form.Item>
+
             <Form.Item>
               <Button type="primary" htmlType="submit" loading={loading} block>
                 {loading ? "Logging in..." : "Login"}
@@ -130,6 +168,60 @@ export default function Login() {
           </Form>
         </Card>
       </Col>
+      <Modal
+        open={recoveryOpen}
+        title="Reset password"
+        okText="Reset Password"
+        confirmLoading={recoveryLoading}
+        onOk={handlePasswordReset}
+        onCancel={() => {
+          recoveryForm.resetFields();
+          setRecoveryOpen(false);
+        }}
+      >
+        <Form form={recoveryForm} layout="vertical">
+          <Form.Item
+            label="Email Address"
+            name="email"
+            rules={[
+              { required: true, message: "Please enter your email." },
+              { type: "email", message: "Please enter a valid email." },
+            ]}
+          >
+            <Input prefix={<UserOutlined />} placeholder="Email" />
+          </Form.Item>
+
+          <Form.Item
+            label="New Password"
+            name="new_password"
+            rules={[
+              { required: true, message: "Please enter your new password." },
+              { min: 8, message: "Password must be at least 8 characters." },
+            ]}
+          >
+            <Input.Password placeholder="New password" />
+          </Form.Item>
+
+          <Form.Item
+            label="Confirm Password"
+            name="confirm_password"
+            dependencies={["new_password"]}
+            rules={[
+              { required: true, message: "Please confirm your new password." },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("new_password") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error("Passwords do not match."));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="Confirm password" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Row>
   );
 }

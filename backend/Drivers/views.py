@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from NGO.models import Orders
 from Main.models import Notification
-from Main.services import create_notification
+from Main.services import create_notification, create_staff_notifications
 from .serializers import RegisterSerializer, DriverUserSerializer, DeliverySerializer
 from .models import User, Deliveries
 from rest_framework.decorators import permission_classes
@@ -85,6 +85,11 @@ class DeliveryView(APIView):
                 f"Order #{order.order_id} is in transit.",
                 Notification.DELIVERY_PICKED_UP,
             )
+            create_staff_notifications(
+                "Food picked up",
+                f"Order #{order.order_id} is in transit.",
+                Notification.DELIVERY_PICKED_UP,
+            )
 
         elif new_status == Deliveries.DELIVERED:
             delivery.status = new_status
@@ -102,6 +107,11 @@ class DeliveryView(APIView):
                 f"Order #{order.order_id} was delivered successfully.",
                 Notification.DELIVERY_DELIVERED,
             )
+            create_staff_notifications(
+                "Delivery completed",
+                f"Order #{order.order_id} was delivered.",
+                Notification.DELIVERY_DELIVERED,
+            )
 
         elif new_status == Deliveries.FAILED:
             delivery.status = new_status
@@ -112,6 +122,11 @@ class DeliveryView(APIView):
             order.status = Orders.FAILED
             create_notification(
                 order.ngo_id.login_id,
+                "Delivery failed",
+                f"Order #{order.order_id} delivery failed.",
+                Notification.DELIVERY_FAILED,
+            )
+            create_staff_notifications(
                 "Delivery failed",
                 f"Order #{order.order_id} delivery failed.",
                 Notification.DELIVERY_FAILED,

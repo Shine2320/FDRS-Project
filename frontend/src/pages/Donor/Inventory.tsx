@@ -55,8 +55,8 @@ export default function InventoryTable() {
 
   // get role from store
   const role = useAuthStore((state) => state.currentUserRole);
-  // only allow add/edit for certain roles
-  const canModify = [Role.Staff, Role.Donor, Role.Admin].includes(role);
+  const canAddInventory = role === Role.Donor;
+  const canEditInventory = [Role.Staff, Role.Donor, Role.Admin].includes(role);
 
   const fetchData = async () => {
     setLoading(true);
@@ -78,7 +78,8 @@ export default function InventoryTable() {
   }, []);
 
   const openModal = (record?: Inventory) => {
-    if (!canModify) return;
+    if (record && !canEditInventory) return;
+    if (!record && !canAddInventory) return;
     if (record) {
       setEditingRecord(record);
       form.setFieldsValue({
@@ -178,7 +179,7 @@ export default function InventoryTable() {
         },
       ];
     }
-    if (canModify)
+    if (canEditInventory)
       return [
         ...baseColumns,
         {
@@ -205,7 +206,7 @@ export default function InventoryTable() {
         flexDirection: "column",
       }}
     >
-      {canModify && (
+      {canAddInventory && (
         <Button
           type="primary"
           style={{ marginBottom: 16, width: "fit-content" }}

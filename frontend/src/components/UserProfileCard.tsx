@@ -48,7 +48,10 @@ export default function Profile() {
             full_name: (data as any).name,
             vehicle_info: (data as any).vehicle,
           }),
-          ...(role === Role.Staff && { full_name: (data as any).name }),
+          ...(role === Role.Staff && {
+            staff_id: (data as any).staff_id,
+            full_name: (data as any).name,
+          }),
         });
       }
     } catch (error) {
@@ -128,6 +131,12 @@ export default function Profile() {
             <Form.Item name="email" label="Email" rules={[{ required: true }]}>
               <Input disabled />
             </Form.Item>
+
+            {role === Role.Staff && (
+              <Form.Item name="staff_id" label="Staff ID">
+                <Input disabled />
+              </Form.Item>
+            )}
 
             <Form.Item
               name="contact_number"

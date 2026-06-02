@@ -161,7 +161,12 @@ class OrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         inventory = validated_data.pop('inventory_id')
         qty = validated_data.pop('quantity')
-        ngo = self.context['request'].user.ngo
+        request = self.context.get('request')
+        if request is None or not hasattr(request.user, 'ngo'):
+            raise serializers.ValidationError(
+                {"ngo": "NGO profile is missing for this user."}
+            )
+        ngo = request.user.ngo
 
         with transaction.atomic():
             inventory = Inventory.objects.select_for_update().get(pk=inventory.pk)

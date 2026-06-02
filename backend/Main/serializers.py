@@ -1,4 +1,5 @@
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError as DjangoValidationError
+from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
@@ -63,6 +64,42 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 
         data["access"] = str(access)
         return data
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    new_password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError(
+                {"confirm_password": "Passwords do not match."}
+            )
+
+        try:
+            user = User.objects.get(
+                email__iexact=attrs["email"],
+                is_active=True,
+                deleted_at__isnull=True,
+            )
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                {"email": "No active user found with this email."}
+            )
+
+        try:
+            validate_password(attrs["new_password"], user)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"new_password": list(exc.messages)})
+        attrs["user"] = user
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.validated_data["user"]
+        user.set_password(self.validated_data["new_password"])
+        user.save(update_fields=["password"])
+        return user
 
 
 class NotificationSerializer(serializers.ModelSerializer):

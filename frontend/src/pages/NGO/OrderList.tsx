@@ -193,6 +193,11 @@ export default function OrderTable() {
     updateOrderStatus(OrderStatus.APPROVED, driverId);
   };
 
+  const closeDetailsModal = () => {
+    setIsModalOpen(false);
+    setOpenDrivers(false);
+  };
+
   const submitFeedback = async () => {
     try {
       const values = await feedbackForm.validateFields();
@@ -213,7 +218,17 @@ export default function OrderTable() {
   };
 
   const ModalButtons = useCallback(() => {
+    const okButton = (
+      <Button key="ok" type="primary" onClick={closeDetailsModal}>
+        OK
+      </Button>
+    );
+
     if (deliveryDetails) {
+      if (role == Role.Donor) {
+        return okButton;
+      }
+
       if (role == Role.Driver) {
         if (deliveryDetails.delivery_status == deliveryStatus.PENDING) {
           return (
@@ -277,13 +292,11 @@ export default function OrderTable() {
       ) {
         return (
           <Button
-            key="close"
+            key="ok"
             type="primary"
-            onClick={() => {
-              setIsModalOpen(false);
-            }}
+            onClick={closeDetailsModal}
           >
-            Close
+            OK
           </Button>
         );
       } else if (role == Role.Ngo) {
@@ -329,12 +342,11 @@ export default function OrderTable() {
             </>
           );
         } else {
-          return <></>;
+          return okButton;
         }
       }
-    } else {
-      return <></>;
     }
+    return okButton;
   }, [deliveryDetails, role, selectedOrder, loading]);
   return (
     <div style={{ padding: 24 }}>
