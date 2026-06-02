@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-from .views import RegisterView, NGOUserListView, OrderView
+from .views import RegisterView, NGOUserListView, OrderView, OrderFeedbackView
 
 urlpatterns = [
     path("register/", RegisterView.as_view()),
@@ -8,5 +8,6 @@ urlpatterns = [
     path("", NGOUserListView.as_view()),
     path("orders/", OrderView.as_view()),
     path("orders/<int:pk>/", OrderView.as_view()),
+    path("orders/<int:pk>/feedback/", OrderFeedbackView.as_view()),
 
 ]

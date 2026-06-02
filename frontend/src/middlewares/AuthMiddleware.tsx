@@ -6,6 +6,6 @@ export default function AuthMiddleware() {
   return localStorage.getItem("refresh_token") ? (
     <Outlet />
   ) : (
-    <Navigate to="/" state={{ from: location }} replace />
+    <Navigate to="/auth/login" state={{ from: location }} replace />
   );
 }

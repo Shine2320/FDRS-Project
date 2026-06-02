@@ -1,39 +1,37 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "../api/apiConfig";
-import { Role } from "../constants/roles";
 import { useAuthStore } from "../Store";
 import useAuth from "./useAuth";
 
 export default function useLogout() {
-  const {  setAccessToken, refreshToken, setIsLoggedIn } = useAuth();
-  const setCurrentUserRole = useAuthStore((state) => state.setCurrentUserRole);
-  const location = useLocation();
+  const {
+    setAccessToken,
+    refreshToken,
+    setRefreshToken,
+    setIsLoggedIn,
+    setUser,
+  } = useAuth();
+  const resetAuthDetails = useAuthStore((state) => state.resetAuthDetails);
   const navigate = useNavigate();
-  const fromLocation =
-    (location.state as { from?: { pathname?: string } })?.from?.pathname || "/";
 
   const logout = async () => {
+    const tokenToBlacklist = refreshToken || localStorage.getItem("refresh_token");
+
     try {
-      await axiosInstance
-        .post("logout/", { refresh_token: refreshToken })
-        .catch(() => {
-          setCurrentUserRole(Role.None);
-          localStorage.removeItem("refresh_token");
-          localStorage.removeItem("isLoggedIn");
-          setAccessToken(null);
-          
-          setIsLoggedIn(false);
-          navigate(fromLocation, { replace: true });
-        });
-      setCurrentUserRole(Role.None);
+      if (tokenToBlacklist) {
+        await axiosInstance.post("logout/", { refresh_token: tokenToBlacklist });
+      }
+    } catch {
+      // Local logout should still complete even if the refresh token is already invalid.
+    } finally {
+      resetAuthDetails();
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("isLoggedIn");
       setAccessToken(null);
-      
+      setRefreshToken(null);
+      setUser(null);
       setIsLoggedIn(false);
-      navigate(fromLocation, { replace: true });
-    } catch (error) {
-      console.log(error);
+      navigate("/auth/login", { replace: true });
     }
   };
 

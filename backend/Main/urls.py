@@ -7,7 +7,16 @@ import Drivers.urls
 import MainAdmin.urls
 import NGO.urls
 import Staff.urls
-from .views import HomeView, LogoutView, CustomTokenObtainPairView, CustomTokenRefreshView, UserStatusUpdateView
+from .views import (
+    HomeView,
+    LogoutView,
+    CustomTokenObtainPairView,
+    CustomTokenRefreshView,
+    UserStatusUpdateView,
+    UserSoftDeleteView,
+    NotificationListView,
+    NotificationReadView,
+)
 import Donors, NGO, Staff, Drivers
 
 
@@ -26,4 +35,7 @@ urlpatterns = [
         name="token_refresh",
     ),
     path("<int:pk>/update-status/", UserStatusUpdateView.as_view()),
+    path("users/<int:pk>/", UserSoftDeleteView.as_view()),
+    path("notifications/", NotificationListView.as_view()),
+    path("notifications/<int:pk>/read/", NotificationReadView.as_view()),
 ]

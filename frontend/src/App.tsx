@@ -18,6 +18,7 @@ import InventoryTable from "./pages/Donor/Inventory";
 import AuthMiddleware from "./middlewares/AuthMiddleware";
 import OrderTable from "./pages/NGO/OrderList";
 import ReportsDashboard from "./pages/admin/ReportsDashBoard";
+import Notifications from "./pages/Notifications";
 
 function App() {
   const location = useLocation();
@@ -131,6 +132,14 @@ function App() {
                   element={
                     <PageWrapper>
                       <ReportsDashboard />
+                    </PageWrapper>
+                  }
+                />
+                <Route
+                  path="notifications"
+                  element={
+                    <PageWrapper>
+                      <Notifications />
                     </PageWrapper>
                   }
                 />

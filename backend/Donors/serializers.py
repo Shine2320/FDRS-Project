@@ -1,5 +1,6 @@
 # accounts/serializers.py
 
+from django.utils import timezone
 from rest_framework import serializers
 from .models import User, Donor,Inventory
 
@@ -89,3 +90,17 @@ class InventorySerializer(serializers.ModelSerializer):
         donor = self.context['request'].user.donor
         # create the Inventory row, wiring in donor_id automatically
         return Inventory.objects.create(donor_id=donor, **validated_data)
+
+    def validate(self, attrs):
+        quantity = attrs.get("quantity", getattr(self.instance, "quantity", None))
+        expiration_date = attrs.get(
+            "expiration_date", getattr(self.instance, "expiration_date", None)
+        )
+        errors = {}
+        if quantity is not None and quantity <= 0:
+            errors["quantity"] = "Quantity must be greater than zero."
+        if expiration_date and expiration_date < timezone.localdate():
+            errors["expiration_date"] = "Expiration date must be today or in the future."
+        if errors:
+            raise serializers.ValidationError(errors)
+        return attrs

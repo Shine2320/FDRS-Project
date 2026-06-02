@@ -3,6 +3,8 @@ import type { Dispatch, SetStateAction, ReactNode } from "react";
 
 // Define types for the context
 interface AuthContextType {
+  user: any;
+  setUser: Dispatch<SetStateAction<any>>;
   accessToken: string | null | undefined;
   setAccessToken: Dispatch<SetStateAction<string | null | undefined>>;
   refreshToken: string | null | undefined;
@@ -14,8 +16,8 @@ interface AuthContextType {
 
 // Create the context with default values
 export const AuthContext = createContext<AuthContextType>({
-  
- 
+  user: null,
+  setUser: () => {},
   accessToken: null,
   setAccessToken: () => {},
   refreshToken: null,
@@ -34,6 +36,7 @@ interface AuthProviderProps {
 export function AuthContextProvider({ children }: AuthProviderProps) {
   const [accessToken, setAccessToken] = useState<string | null>();
   const [refreshToken, setRefreshToken] = useState<string | null>();
+  const [user, setUser] = useState<any>(null);
  
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(
     JSON.parse(localStorage.getItem("isLoggedIn") || "false")
@@ -46,7 +49,8 @@ export function AuthContextProvider({ children }: AuthProviderProps) {
   return (
     <AuthContext.Provider
       value={{
-       
+        user,
+        setUser,
         accessToken,
         setAccessToken,
         refreshToken,

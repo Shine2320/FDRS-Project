@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/fixStaticTags.js",
+    "build": "tsc -b && vite build && node scripts/fix_static_tags.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Button,
   Select,
@@ -9,7 +9,6 @@ import {
   Typography,
   message,
 } from "antd";
-import axios from "axios";
 import {
   BarChart,
   Bar,
@@ -130,6 +129,24 @@ export default function ReportsDashboard() {
     }
   };
 
+  const exportReport = async (reportName: string) => {
+    if (!selectedBatch) return;
+    try {
+      const response = await axiosPrivate.get(
+        `/api/reports/${selectedBatch}/${reportName}/export/?format=csv`,
+        { responseType: "blob" }
+      );
+      const href = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = `${reportName}-${selectedBatch}.csv`;
+      link.click();
+      URL.revokeObjectURL(href);
+    } catch {
+      message.error("Failed to export report");
+    }
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
@@ -171,6 +188,12 @@ export default function ReportsDashboard() {
             {/* Inventory Status - Bar Chart */}
             <Col span={12}>
               <Card title="Inventory Status">
+                <Button
+                  style={{ marginBottom: 12 }}
+                  onClick={() => exportReport("inventory-status")}
+                >
+                  Export CSV
+                </Button>
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={inventoryData} margin={{ bottom: 20 }}>
                     <XAxis dataKey="label" />
@@ -186,6 +209,12 @@ export default function ReportsDashboard() {
             {/* Order Summary - Bar Chart */}
             <Col span={12}>
               <Card title="Order Summary">
+                <Button
+                  style={{ marginBottom: 12 }}
+                  onClick={() => exportReport("order-summary")}
+                >
+                  Export CSV
+                </Button>
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={orderData} margin={{ bottom: 20 }}>
                     <XAxis dataKey="label" />
@@ -201,6 +230,12 @@ export default function ReportsDashboard() {
             {/* Delivery Efficiency - Text Detail */}
             <Col span={12}>
               <Card title="Delivery Efficiency">
+                <Button
+                  style={{ marginBottom: 12 }}
+                  onClick={() => exportReport("delivery-efficiency")}
+                >
+                  Export CSV
+                </Button>
                 <Title level={4} style={{ textAlign: "center" }}>
                   Avg Delivery Time:{" "}
                   {deliveryData?.average_delivery_seconds?.toFixed(0) || "--"}{" "}
@@ -212,6 +247,12 @@ export default function ReportsDashboard() {
             {/* User Activity - Bar Chart per NGO */}
             <Col span={12}>
               <Card title="Orders per NGO">
+                <Button
+                  style={{ marginBottom: 12 }}
+                  onClick={() => exportReport("user-activity")}
+                >
+                  Export CSV
+                </Button>
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={userData} margin={{ bottom: 20 }}>
                     <XAxis dataKey="label" />

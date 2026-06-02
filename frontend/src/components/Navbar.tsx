@@ -22,6 +22,10 @@ export default function Navbar() {
   const currentPath = location.pathname;
 
   const renderNavItems = useCallback(() => {
+    const notificationItem = {
+      key: "/notifications",
+      label: <NavLink to="/notifications">Notifications</NavLink>,
+    };
     switch (role) {
       case Role.Donor:
         return [
@@ -34,6 +38,7 @@ export default function Navbar() {
             key: "/orderList",
             label: <NavLink to="/orderList">Orders</NavLink>,
           },
+          notificationItem,
         ];
       case Role.Ngo:
         return [
@@ -46,6 +51,7 @@ export default function Navbar() {
             key: "/orderList",
             label: <NavLink to="/orderList">Orders</NavLink>,
           },
+          notificationItem,
         ];
       case Role.Staff:
         return [
@@ -58,6 +64,7 @@ export default function Navbar() {
             key: "/orderList",
             label: <NavLink to="/orderList">Orders</NavLink>,
           },
+          notificationItem,
         ];
       case Role.Driver:
         return [
@@ -66,6 +73,7 @@ export default function Navbar() {
             key: "/orderList",
             label: <NavLink to="/orderList">Orders</NavLink>,
           },
+          notificationItem,
         ];
       case Role.Admin:
         return [
@@ -97,6 +105,7 @@ export default function Navbar() {
             key: "/reports",
             label: <NavLink to="/reports">Reports</NavLink>,
           },
+          notificationItem,
         ];
       default:
         return [];

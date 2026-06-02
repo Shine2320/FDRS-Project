@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Table, Space, Button, message } from "antd";
+import { Table, Space, Button, message, Modal } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/usePrivate";
@@ -51,6 +51,20 @@ const DonorList: React.FC = () => {
     }
   };
 
+  const deleteUser = async (record: DonorMember) => {
+    Modal.confirm({
+      title: "Delete donor?",
+      content: `Delete ${record.name} from active user lists?`,
+      okText: "Delete",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        await axiosPrivateInstance.delete(`/users/${record.id}/`);
+        message.success(`Donor ${record.name} deleted`);
+        fetchDonorData();
+      },
+    });
+  };
+
   const columns: ColumnsType<DonorMember> = [
     {
       title: "Donor ID",
@@ -96,11 +110,10 @@ const DonorList: React.FC = () => {
             {record.is_active ? "Suspend" : "Activate"}
           </Button>
           <Button
-            type={record.is_active ? "default" : "primary"}
-            danger={record.is_active}
-            onClick={() => toggleActiveStatus(record)}
+            danger
+            onClick={() => deleteUser(record)}
           >
-            {record.is_active ? "Delete" : "Activate"}
+            Delete
           </Button>
         </Space>
       ),

@@ -1,5 +1,6 @@
 # accounts/serializers.py
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 from phonenumber_field.serializerfields import PhoneNumberField
 from Donors.models import Inventory
@@ -68,7 +69,7 @@ class NGOUserSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    item_name = serializers.CharField(read_only=True)
+    item_name = serializers.CharField(source="inventory_id.item_name", read_only=True)
     donor_name = serializers.CharField(read_only=True)
     donor_address = serializers.CharField(read_only=True)
     donor_contact_number = PhoneNumberField(read_only=True)
@@ -106,6 +107,9 @@ class OrderSerializer(serializers.ModelSerializer):
             'picked_up_time',
             'delivery_time',
             'created_on',
+            'feedback_rating',
+            'feedback_comment',
+            'feedback_submitted_at',
         )
         read_only_fields = (
             'order_id',
@@ -125,7 +129,33 @@ class OrderSerializer(serializers.ModelSerializer):
             'picked_up_time',
             'delivery_time',
             'created_on',
+            'feedback_rating',
+            'feedback_comment',
+            'feedback_submitted_at',
         )
+
+    def validate(self, attrs):
+        inventory = attrs.get("inventory_id")
+        quantity = attrs.get("quantity")
+        if quantity is not None and quantity <= 0:
+            raise serializers.ValidationError(
+                {"quantity": "Quantity must be greater than zero."}
+            )
+        if inventory and quantity:
+            # Orders are only valid while food is still available and in stock.
+            if inventory.status != Inventory.AVAILABLE:
+                raise serializers.ValidationError(
+                    {"inventory_id": "This inventory item is not available."}
+                )
+            if inventory.expiration_date < timezone.localdate():
+                raise serializers.ValidationError(
+                    {"inventory_id": "This inventory item has expired."}
+                )
+            if inventory.quantity < quantity:
+                raise serializers.ValidationError(
+                    {"quantity": "Quantity cannot exceed available inventory."}
+                )
+        return attrs
 
 
     def create(self, validated_data):
@@ -134,6 +164,11 @@ class OrderSerializer(serializers.ModelSerializer):
         ngo = self.context['request'].user.ngo
 
         with transaction.atomic():
+            inventory = Inventory.objects.select_for_update().get(pk=inventory.pk)
+            if inventory.status != Inventory.AVAILABLE or inventory.quantity < qty:
+                raise serializers.ValidationError(
+                    {"inventory_id": "This inventory item is no longer available."}
+                )
             inventory.quantity -= qty
             if inventory.quantity <= 0:
                 inventory.status = Inventory.RESERVED
@@ -146,4 +181,16 @@ class OrderSerializer(serializers.ModelSerializer):
                 **validated_data
             )
         return order
+
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Orders
+        fields = ("feedback_rating", "feedback_comment", "feedback_submitted_at")
+        read_only_fields = ("feedback_submitted_at",)
+
+    def validate_feedback_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5.")
+        return value
 

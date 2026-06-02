@@ -1,6 +1,9 @@
 import uuid
+import csv
 from datetime import timedelta
+from io import StringIO
 
+from django.http import HttpResponse
 from django.db.models import Max
 from django.utils import timezone
 from rest_framework.views import APIView
@@ -66,3 +69,32 @@ class ReportDataView(APIView):
         if not report:
             return Response({'error':'Not found'}, status=status.HTTP_404_NOT_FOUND)
         return Response(report.data, status=status.HTTP_200_OK)
+
+
+class ReportExportView(APIView):
+    mapping = ReportDataView.mapping
+
+    def get(self, request, batch_key, report_name):
+        if request.query_params.get("format", "csv") != "csv":
+            return Response({'error':'Invalid export format'}, status=status.HTTP_400_BAD_REQUEST)
+        if report_name not in self.mapping:
+            return Response({'error':'Invalid report'}, status=status.HTTP_400_BAD_REQUEST)
+        report = Reports.objects.filter(
+            batch_key=batch_key,
+            report_type=self.mapping[report_name],
+        ).first()
+        if not report:
+            return Response({'error':'Not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        rows = report.data if isinstance(report.data, list) else [report.data]
+        output = StringIO()
+        if rows:
+            fieldnames = sorted({key for row in rows for key in row.keys()})
+            writer = csv.DictWriter(output, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+        response = HttpResponse(output.getvalue(), content_type="text/csv")
+        response["Content-Disposition"] = (
+            f'attachment; filename="{report_name}-{batch_key}.csv"'
+        )
+        return response

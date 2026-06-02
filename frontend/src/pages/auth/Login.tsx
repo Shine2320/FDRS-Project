@@ -2,7 +2,17 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { axiosInstance } from "../../api/apiConfig";
 import useAuth from "../../hooks/useAuth";
-import { Form, Input, Button, Typography, Row, Col, Space, Card } from "antd";
+import {
+  Form,
+  Input,
+  Button,
+  Typography,
+  Row,
+  Col,
+  Space,
+  Card,
+  Alert,
+} from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { jwtDecode } from "jwt-decode";
 import { useAuthStore } from "../../Store";
@@ -10,7 +20,7 @@ import { useAuthStore } from "../../Store";
 const { Title, Text, Link } = Typography;
 
 export default function Login() {
-  const { setAccessToken, setIsLoggedIn } = useAuth();
+  const { setAccessToken, setRefreshToken, setIsLoggedIn } = useAuth();
   const setCurrentUserRole = useAuthStore((state) => state.setCurrentUserRole);
   const setCurrentUserName = useAuthStore((state) => state.setCurrentUserName);
   const navigate = useNavigate();
@@ -19,9 +29,11 @@ export default function Login() {
     (location.state as { from?: { pathname?: string } })?.from?.pathname || "/";
 
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const onFinish = async (values: { email: string; password: string }) => {
     setLoading(true);
+    setLoginError(null);
     try {
       const response = await axiosInstance.post(
         "auth/token/",
@@ -33,6 +45,7 @@ export default function Login() {
         }
       );
       if (response?.data?.access) {
+        setLoginError(null);
         const decoded: any = jwtDecode(response.data.access);
         setCurrentUserRole(decoded.role);
         setCurrentUserName(decoded.name);
@@ -40,15 +53,15 @@ export default function Login() {
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("isLoggedIn");
       localStorage.setItem("refresh_token", response?.data?.refresh);
-      setAccessToken(response?.data?.access_token);
+      setAccessToken(response?.data?.access);
+      setRefreshToken(response?.data?.refresh);
       setIsLoggedIn(true);
       setLoading(false);
 
       navigate(fromLocation, { replace: true });
-    } catch (error) {
+    } catch {
       setLoading(false);
-      console.error("Login failed:", error);
-      // Optional: Add AntD message.error for feedback
+      setLoginError("Invalid email or password. Please try again.");
     }
   };
 
@@ -76,6 +89,15 @@ export default function Login() {
             initialValues={{ remember: true }}
             onFinish={onFinish}
           >
+            {loginError && (
+              <Alert
+                type="error"
+                message={loginError}
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
+
             <Form.Item
               label="Email Address"
               name="email"
@@ -102,7 +124,7 @@ export default function Login() {
 
             <Form.Item style={{ textAlign: "right", marginBottom: 0 }}>
               <Text>
-                Don't have an account? <Link href="/register">Register</Link>
+                Don't have an account? <Link href="/auth/register">Register</Link>
               </Text>
             </Form.Item>
           </Form>

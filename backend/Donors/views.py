@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 
 from .serializers import RegisterSerializer, DonorUserSerializer, InventorySerializer
 from .models import User,Inventory
+from .services import refresh_expired_inventory
+from NGO.models import Orders
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 
@@ -17,13 +19,15 @@ class RegisterView(generics.CreateAPIView):
 
 class DonorUserListView(APIView):
     def get(self,request):
-        if request.user.is_staff:
+        if request.user.is_staff or request.user.role == User.ADMIN:
             permission_classes([IsAdminUser])
-            user = User.objects.filter(role=User.DONOR).select_related("donor")
+            user = User.objects.filter(
+                role=User.DONOR, deleted_at__isnull=True
+            ).select_related("donor")
             serializer_class = DonorUserSerializer(user, many=True)
             return Response(serializer_class.data)
         else:
-            user = User.objects.filter(pk=request.user.pk)
+            user = User.objects.filter(pk=request.user.pk, deleted_at__isnull=True)
             serializer = DonorUserSerializer(user, many=True)
             return Response(serializer.data)
 
@@ -42,7 +46,15 @@ class DonorUserListView(APIView):
 
 class InventoryView(APIView):
     def get(self, request):
-        if request.user.role in [User.STAFF, User.ADMIN, User.NGO]:
+        refresh_expired_inventory()
+        if request.user.role == User.NGO:
+            inventory = Inventory.objects.filter(
+                status=Inventory.AVAILABLE,
+                quantity__gt=0,
+            )
+            serializer = InventorySerializer(inventory, many=True)
+            return Response(serializer.data)
+        if request.user.role in [User.STAFF, User.ADMIN]:
             # User has one of the specified roles
             inventory = Inventory.objects.all()
             serializer = InventorySerializer(inventory, many=True)
@@ -70,5 +82,21 @@ class InventoryView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DonorImpactView(APIView):
+    def get(self, request):
+        if request.user.role != User.DONOR:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        orders = Orders.objects.filter(
+            inventory_id__donor_id=request.user.donor,
+            status=Orders.DELIVERED,
+        )
+        return Response(
+            {
+                "delivered_orders": orders.count(),
+                "delivered_quantity": sum(order.quantity for order in orders),
+            }
+        )
 
 

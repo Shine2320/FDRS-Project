@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Table, Space, Button, message } from "antd";
+import { Table, Space, Button, message, Modal } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/usePrivate";
@@ -18,7 +18,7 @@ interface DriverMember {
 
 const DriverList: React.FC<{
   isModal?: boolean;
-  assignDriver?: (id: number) => {};
+  assignDriver?: (id: number) => void;
 }> = ({ isModal, assignDriver }) => {
   const axiosPrivateInstance = useAxiosPrivate();
   const [loading, setLoading] = useState<boolean>(false);
@@ -53,6 +53,20 @@ const DriverList: React.FC<{
       message.error("Failed to update status");
       console.error("Update status error:", error);
     }
+  };
+
+  const deleteUser = async (record: DriverMember) => {
+    Modal.confirm({
+      title: "Delete driver?",
+      content: `Delete ${record.name} from active user lists?`,
+      okText: "Delete",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        await axiosPrivateInstance.delete(`/users/${record.id}/`);
+        message.success(`Driver ${record.name} deleted`);
+        fetchDonorData();
+      },
+    });
   };
 
   const columns: ColumnsType<DriverMember> = [
@@ -98,13 +112,18 @@ const DriverList: React.FC<{
       render: (_, record) => (
         <Space>
           {!isModal ? (
-            <Button
-              type={record.is_active ? "default" : "primary"}
-              danger={record.is_active}
-              onClick={() => toggleActiveStatus(record)}
-            >
-              {record.is_active ? "Disable" : "Activate"}
-            </Button>
+            <>
+              <Button
+                type={record.is_active ? "default" : "primary"}
+                danger={record.is_active}
+                onClick={() => toggleActiveStatus(record)}
+              >
+                {record.is_active ? "Disable" : "Activate"}
+              </Button>
+              <Button danger onClick={() => deleteUser(record)}>
+                Delete
+              </Button>
+            </>
           ) : (
             <Button
               type={"primary"}

@@ -79,7 +79,7 @@ export default function OrderModal({
         // Edit existing order
         await axiosPrivate.patch(
           `/ngo/orders/${orderDetails.order_id}/`,
-          values
+          values,
         );
         message.success("Order updated successfully");
       } else {
@@ -91,7 +91,7 @@ export default function OrderModal({
       onClose(true);
     } catch (err: any) {
       message.error(
-        orderDetails ? "Failed to update order" : "Failed to create order"
+        orderDetails ? "Failed to update order" : "Failed to create order",
       );
     } finally {
       setConfirmLoading(false);
@@ -106,7 +106,7 @@ export default function OrderModal({
       confirmLoading={confirmLoading}
       onCancel={() => onClose(false)}
       okText="Submit"
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical">
         {/* hidden inventory_id */}

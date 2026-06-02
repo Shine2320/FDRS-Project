@@ -20,13 +20,15 @@ class RegisterView(generics.CreateAPIView):
 @permission_classes([IsAuthenticated])
 class StaffUserListView(APIView):
     def get(self,request):
-        if request.user.is_staff:
+        if request.user.is_staff or request.user.role == User.ADMIN:
             permission_classes([IsAdminUser])
-            user = User.objects.filter(role=User.STAFF).select_related("ngo")
+            user = User.objects.filter(
+                role=User.STAFF, deleted_at__isnull=True
+            ).select_related("staff")
             serializer_class = StaffUserSerializer(user, many=True)
             return Response(serializer_class.data)
         else:
-            user = User.objects.filter(pk=request.user.pk)
+            user = User.objects.filter(pk=request.user.pk, deleted_at__isnull=True)
             serializer = StaffUserSerializer(user, many=True)
             return Response(serializer.data)
 

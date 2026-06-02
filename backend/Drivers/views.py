@@ -8,6 +8,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from NGO.models import Orders
+from Main.models import Notification
+from Main.services import create_notification
 from .serializers import RegisterSerializer, DriverUserSerializer, DeliverySerializer
 from .models import User, Deliveries
 from rest_framework.decorators import permission_classes
@@ -25,11 +27,13 @@ class RegisterView(generics.CreateAPIView):
 class DriverUserListView(APIView):
     def get(self,request):
         if request.user.role in [User.STAFF, User.ADMIN]:
-            user = User.objects.filter(role=User.DRIVER).select_related("driver")
+            user = User.objects.filter(
+                role=User.DRIVER, deleted_at__isnull=True
+            ).select_related("driver")
             serializer_class = DriverUserSerializer(user, many=True)
             return Response(serializer_class.data)
         else:
-            user = User.objects.filter(pk=request.user.pk)
+            user = User.objects.filter(pk=request.user.pk, deleted_at__isnull=True)
             serializer = DriverUserSerializer(user, many=True)
             return Response(serializer.data)
 
@@ -60,7 +64,13 @@ class DeliveryView(APIView):
         # 1) Fetch the delivery for this order or 404
         delivery = get_object_or_404(Deliveries, order_id=pk)
         order = delivery.order_id
-        new_status = request.data.get('status')
+        try:
+            new_status = int(request.data.get('status'))
+        except (TypeError, ValueError):
+            return Response(
+                {'status': 'Invalid status'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         inventory = order.inventory_id
         # 2) Compute timestamps
         now = timezone.now()
@@ -69,18 +79,43 @@ class DeliveryView(APIView):
         if new_status == Deliveries.IN_TRANSIT:
             delivery.status = new_status
             delivery.pickup_time = now
+            create_notification(
+                order.ngo_id.login_id,
+                "Food picked up",
+                f"Order #{order.order_id} is in transit.",
+                Notification.DELIVERY_PICKED_UP,
+            )
 
         elif new_status == Deliveries.DELIVERED:
             delivery.status = new_status
             delivery.delivery_time = now
             order.status = Orders.DELIVERED
+            create_notification(
+                order.ngo_id.login_id,
+                "Delivery completed",
+                f"Order #{order.order_id} was delivered.",
+                Notification.DELIVERY_DELIVERED,
+            )
+            create_notification(
+                order.inventory_id.donor_id.login_id,
+                "Donation delivered",
+                f"Order #{order.order_id} was delivered successfully.",
+                Notification.DELIVERY_DELIVERED,
+            )
 
         elif new_status == Deliveries.FAILED:
             delivery.status = new_status
             # restock the inventory
 
             inventory.quantity = inventory.quantity + order.quantity
+            inventory.status = inventory.AVAILABLE
             order.status = Orders.FAILED
+            create_notification(
+                order.ngo_id.login_id,
+                "Delivery failed",
+                f"Order #{order.order_id} delivery failed.",
+                Notification.DELIVERY_FAILED,
+            )
 
         else:
             return Response(
@@ -93,7 +128,7 @@ class DeliveryView(APIView):
             order.save()
             # if you modified inventory:
             if new_status == Deliveries.FAILED:
-                inventory.save()
+                inventory.save(update_fields=["quantity", "status"])
             delivery.save()
 
         # 5) Serialize & return the updated delivery

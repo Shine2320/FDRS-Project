@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Table, Space, Button, message } from "antd";
+import { Table, Space, Button, message, Modal } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/usePrivate";
@@ -51,6 +51,20 @@ const StaffList: React.FC = () => {
     }
   };
 
+  const deleteUser = async (record: StaffMember) => {
+    Modal.confirm({
+      title: "Delete staff?",
+      content: `Delete ${record.name} from active user lists?`,
+      okText: "Delete",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        await axiosPrivateInstance.delete(`/users/${record.id}/`);
+        message.success(`Staff ${record.name} deleted`);
+        fetchStaffData();
+      },
+    });
+  };
+
   const columns: ColumnsType<StaffMember> = [
     {
       title: "Staff ID",
@@ -94,6 +108,9 @@ const StaffList: React.FC = () => {
             onClick={() => toggleActiveStatus(record)}
           >
             {record.is_active ? "Disable" : "Activate"}
+          </Button>
+          <Button danger onClick={() => deleteUser(record)}>
+            Delete
           </Button>
         </Space>
       ),

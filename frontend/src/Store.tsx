@@ -7,6 +7,7 @@ interface AuthDetails {
   setCurrentUserRole: (role: Role) => void;
   currentUserName: string; // Optional, can be used to store user's name
   setCurrentUserName: (name: string) => void; // Optional, can be used to set user's name
+  resetAuthDetails: () => void;
 }
 
 export const useAuthStore = create<AuthDetails>()((set) => ({
@@ -16,6 +17,12 @@ export const useAuthStore = create<AuthDetails>()((set) => ({
   currentUserName: "",
   setCurrentUserName: (name) =>
     set((state) => ({ ...state, currentUserName: name })),
+  resetAuthDetails: () =>
+    set((state) => ({
+      ...state,
+      currentUserRole: Role.None,
+      currentUserName: "",
+    })),
 }));
 
 interface UITheme {

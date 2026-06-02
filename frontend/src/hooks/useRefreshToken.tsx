@@ -2,7 +2,6 @@ import { jwtDecode } from "jwt-decode";
 import { axiosInstance } from "../api/apiConfig";
 import { useAuthStore } from "../Store";
 import useAuth from "./useAuth";
-import { Role } from "../constants/roles";
 import { useLocation, useNavigate } from "react-router-dom";
 
 interface RefreshResponse {
@@ -12,12 +11,20 @@ interface RefreshResponse {
 export default function useRefreshToken() {
   const location = useLocation();
   const navigate = useNavigate();
-  const fromLocation =
-    (location.state as { from?: { pathname?: string } })?.from?.pathname || "/";
   const { isLoggedIn, setAccessToken, setIsLoggedIn, setRefreshToken } =
     useAuth();
   const setCurrentUserRole = useAuthStore((state) => state.setCurrentUserRole);
   const setCurrentUserName = useAuthStore((state) => state.setCurrentUserName);
+  const resetAuthDetails = useAuthStore((state) => state.resetAuthDetails);
+
+  const clearAuthState = () => {
+    setIsLoggedIn(false);
+    resetAuthDetails();
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("isLoggedIn");
+    setAccessToken(null);
+    setRefreshToken(null);
+  };
 
   const refresh = async (): Promise<RefreshResponse | void> => {
     if (!isLoggedIn) {
@@ -25,6 +32,7 @@ export default function useRefreshToken() {
     }
     const refresh_token = localStorage.getItem("refresh_token");
     if (!refresh_token) {
+      clearAuthState();
       return;
     }
     setRefreshToken(refresh_token);
@@ -42,18 +50,13 @@ export default function useRefreshToken() {
         return { accessToken };
       } else {
         console.error("Failed to refresh token");
-        setIsLoggedIn(false);
+        clearAuthState();
         return;
       }
     } catch (error) {
       console.error("Error refreshing token:", error);
-      setIsLoggedIn(false);
-      setCurrentUserRole(Role.None);
-      localStorage.removeItem("refresh_token");
-      localStorage.removeItem("isLoggedIn");
-      setAccessToken(null);     
-      setIsLoggedIn(false);
-      navigate(fromLocation, { replace: true });
+      clearAuthState();
+      navigate("/auth/login", { state: { from: location }, replace: true });
       return;
     }
   };

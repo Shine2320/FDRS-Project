@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Table, Space, Button, message } from "antd";
+import { Table, Space, Button, message, Modal } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/usePrivate";
 
 interface NGOMember {
   id: number;
-  donor_id: string;
-  name: string;
+  ngo_id: string;
+  organization_name: string;
   email: string;
   contact_number: string;
   address: string;
@@ -42,13 +42,29 @@ const NGOList: React.FC = () => {
         is_active: newStatus,
       });
       message.success(
-        `NGO ${record.name} is now ${newStatus ? "active" : "disabled"}`
+        `NGO ${record.organization_name} is now ${
+          newStatus ? "active" : "disabled"
+        }`
       );
       fetchDonorData(); // Refresh data
     } catch (error) {
       message.error("Failed to update status");
       console.error("Update status error:", error);
     }
+  };
+
+  const deleteUser = async (record: NGOMember) => {
+    Modal.confirm({
+      title: "Delete NGO?",
+      content: `Delete ${record.organization_name} from active user lists?`,
+      okText: "Delete",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        await axiosPrivateInstance.delete(`/users/${record.id}/`);
+        message.success(`NGO ${record.organization_name} deleted`);
+        fetchDonorData();
+      },
+    });
   };
 
   const columns: ColumnsType<NGOMember> = [
@@ -59,8 +75,8 @@ const NGOList: React.FC = () => {
     },
     {
       title: "Name",
-      dataIndex: "name",
-      key: "name",
+      dataIndex: "organization_name",
+      key: "organization_name",
     },
     {
       title: "Email",
@@ -94,6 +110,9 @@ const NGOList: React.FC = () => {
             onClick={() => toggleActiveStatus(record)}
           >
             {record.is_active ? "Disable" : "Activate"}
+          </Button>
+          <Button danger onClick={() => deleteUser(record)}>
+            Delete
           </Button>
         </Space>
       ),

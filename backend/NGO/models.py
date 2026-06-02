@@ -35,3 +35,6 @@ class Orders(models.Model):
     quantity = models.IntegerField()
     status = models.SmallIntegerField(choices=STATUS_TYPE, default=PENDING)
     created_on = models.DateTimeField(default=timezone.now)
+    feedback_rating = models.PositiveSmallIntegerField(null=True, blank=True)
+    feedback_comment = models.TextField(null=True, blank=True)
+    feedback_submitted_at = models.DateTimeField(null=True, blank=True)

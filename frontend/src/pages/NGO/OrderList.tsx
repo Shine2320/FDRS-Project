@@ -1,9 +1,20 @@
-import { useCallback, useEffect, useState } from "react";
-import { Table, Modal, Button, Descriptions, message } from "antd";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Table,
+  Modal,
+  Button,
+  Descriptions,
+  message,
+  Card,
+  Form,
+  Input,
+  Rate,
+} from "antd";
 import useAxiosPrivate from "../../hooks/usePrivate";
 import { useAuthStore } from "../../Store";
 import { Role } from "../../constants/roles";
 import DriverList from "../admin/DriverList";
+import useAuth from "../../hooks/useAuth";
 
 type OrderRecord = {
   order_id: number;
@@ -17,7 +28,7 @@ type OrderRecord = {
 type DeliveryDetails = {
   donor_name: string;
   donor_address: string;
-  donor_contact: string;
+  donor_contact_number: string;
   donor_email: string;
   ngo_name: string;
   ngo_address: string;
@@ -25,10 +36,18 @@ type DeliveryDetails = {
   ngo_email: string;
   driver_name: string;
   driver_vehicle: string;
-  driver_contact: string;
+  driver_contact_number: string;
   delivery_status: deliveryStatus;
   picked_up_time: string;
   delivery_time: string;
+  feedback_rating: number | null;
+  feedback_comment: string | null;
+  feedback_submitted_at: string | null;
+};
+
+type DonorImpact = {
+  delivered_orders: number;
+  delivered_quantity: number;
 };
 
 const statusMap = {
@@ -36,6 +55,7 @@ const statusMap = {
   1: "Approved",
   2: "Delivered",
   3: "Cancelled",
+  4: "Failed",
 };
 const deliveryStatusMap = {
   0: "Pending",
@@ -59,7 +79,11 @@ enum deliveryStatus {
 
 export default function OrderTable() {
   const role = useAuthStore((s) => s.currentUserRole);
+  const { isLoggedIn } = useAuth();
   const axiosPrivateInstance = useAxiosPrivate();
+  const canFetchOrders = isLoggedIn && role !== Role.None;
+  const canShowRequestErrorRef = useRef(canFetchOrders);
+  canShowRequestErrorRef.current = canFetchOrders;
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<OrderRecord | null>(null);
   const [deliveryDetails, setDeliveryDetails] =
@@ -67,17 +91,51 @@ export default function OrderTable() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [openDrivers, setOpenDrivers] = useState(false);
+  const [impact, setImpact] = useState<DonorImpact | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackForm] = Form.useForm();
 
-  const fetchOrders = () => {
-    axiosPrivateInstance
-      .get("/ngo/orders/")
-      .then((res) => setOrders(res.data))
-      .catch(() => message.error("Failed to fetch orders."));
+  const fetchOrders = async () => {
+    if (!canFetchOrders) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await axiosPrivateInstance.get("/ngo/orders/");
+      setOrders(res.data);
+    } catch {
+      if (canShowRequestErrorRef.current) {
+        message.error("Failed to fetch orders.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchImpact = async () => {
+    if (!isLoggedIn || role !== Role.Donor) return;
+    try {
+      const res = await axiosPrivateInstance.get<DonorImpact>("/donor/impact/");
+      setImpact(res.data);
+    } catch {
+      if (canShowRequestErrorRef.current) {
+        message.error("Failed to fetch donor impact.");
+      }
+    }
   };
   // Fetch orders on mount
   useEffect(() => {
+    if (!canFetchOrders) {
+      setOrders([]);
+      setImpact(null);
+      setLoading(false);
+      return;
+    }
+
     fetchOrders();
-  }, []);
+    fetchImpact();
+  }, [role, isLoggedIn]);
 
   const openDetails = async (record: OrderRecord) => {
     setLoading(true);
@@ -89,7 +147,9 @@ export default function OrderTable() {
       setDeliveryDetails(res.data);
       setIsModalOpen(true);
     } catch {
-      message.error("Failed to fetch delivery details.");
+      if (canShowRequestErrorRef.current) {
+        message.error("Failed to fetch delivery details.");
+      }
     } finally {
       setLoading(false);
     }
@@ -104,7 +164,9 @@ export default function OrderTable() {
       fetchOrders();
       setIsModalOpen(false);
     } catch {
-      message.error("Failed to fetch delivery details.");
+      if (canShowRequestErrorRef.current) {
+        message.error("Failed to fetch delivery details.");
+      }
     } finally {
       setLoading(false);
     }
@@ -120,13 +182,34 @@ export default function OrderTable() {
       setIsModalOpen(false);
       setOpenDrivers(false);
     } catch {
-      message.error("Failed to fetch delivery details.");
+      if (canShowRequestErrorRef.current) {
+        message.error("Failed to fetch delivery details.");
+      }
     } finally {
       setLoading(false);
     }
   };
   const assignDriver = async (driverId: number) => {
     updateOrderStatus(OrderStatus.APPROVED, driverId);
+  };
+
+  const submitFeedback = async () => {
+    try {
+      const values = await feedbackForm.validateFields();
+      await axiosPrivateInstance.patch(
+        `/ngo/orders/${selectedOrder?.order_id}/feedback/`,
+        values
+      );
+      message.success("Feedback submitted");
+      setFeedbackOpen(false);
+      if (selectedOrder) {
+        await openDetails(selectedOrder);
+      }
+    } catch {
+      if (canShowRequestErrorRef.current) {
+        message.error("Failed to submit feedback");
+      }
+    }
   };
 
   const ModalButtons = useCallback(() => {
@@ -172,6 +255,20 @@ export default function OrderTable() {
             </>
           );
         }
+      } else if (
+        role == Role.Ngo &&
+        selectedOrder?.status == OrderStatus.DELIVERED &&
+        !deliveryDetails.feedback_rating
+      ) {
+        return (
+          <Button
+            key="feedback"
+            type="primary"
+            onClick={() => setFeedbackOpen(true)}
+          >
+            Submit Feedback
+          </Button>
+        );
       } else if (
         selectedOrder?.status == OrderStatus.FAILED ||
         selectedOrder?.status == OrderStatus.DELIVERED ||
@@ -241,10 +338,16 @@ export default function OrderTable() {
   }, [deliveryDetails, role, selectedOrder, loading]);
   return (
     <div style={{ padding: 24 }}>
+      {role === Role.Donor && impact && (
+        <Card style={{ marginBottom: 16 }}>
+          Delivered Orders: {impact.delivered_orders} | Food Delivered:{" "}
+          {impact.delivered_quantity}
+        </Card>
+      )}
       <Table
         dataSource={orders}
         rowKey="order_id"
-        loading={!orders.length}
+        loading={loading}
         columns={[
           {
             title: "Order ID",
@@ -259,7 +362,7 @@ export default function OrderTable() {
             dataIndex: "quantity",
           },
           {
-            title: "Craeted On",
+            title: "Created On",
             dataIndex: "created_on",
           },
           {
@@ -302,7 +405,7 @@ export default function OrderTable() {
                 {deliveryDetails.donor_name}
               </Descriptions.Item>
               <Descriptions.Item label="Contact">
-                {deliveryDetails.donor_contact}
+                {deliveryDetails.donor_contact_number}
               </Descriptions.Item>
               <Descriptions.Item label="Email">
                 {deliveryDetails.donor_email}
@@ -347,7 +450,7 @@ export default function OrderTable() {
                 {deliveryDetails.driver_vehicle}
               </Descriptions.Item>
               <Descriptions.Item label="Driver Contact">
-                {deliveryDetails.driver_contact}
+                {deliveryDetails.driver_contact_number}
               </Descriptions.Item>
               <Descriptions.Item label="Status">
                 {
@@ -362,11 +465,39 @@ export default function OrderTable() {
               <Descriptions.Item label="Delivery Time">
                 {deliveryDetails.delivery_time}
               </Descriptions.Item>
+              <Descriptions.Item label="Feedback">
+                {deliveryDetails.feedback_rating
+                  ? `${deliveryDetails.feedback_rating}/5`
+                  : "Not submitted"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Comment">
+                {deliveryDetails.feedback_comment}
+              </Descriptions.Item>
             </Descriptions>
           </>
         ) : (
           <></>
         )}
+      </Modal>
+      <Modal
+        open={feedbackOpen}
+        title="Delivery Feedback"
+        onOk={submitFeedback}
+        onCancel={() => setFeedbackOpen(false)}
+        okText="Submit"
+      >
+        <Form form={feedbackForm} layout="vertical">
+          <Form.Item
+            name="feedback_rating"
+            label="Rating"
+            rules={[{ required: true, message: "Please select rating" }]}
+          >
+            <Rate />
+          </Form.Item>
+          <Form.Item name="feedback_comment" label="Comment">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );
